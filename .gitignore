@@ -1,0 +1,12 @@
+# Build
+bin/
+obj/
+artifacts/
+*.user
+.vs/
+.vscode/
+*.log
+
+# Lokale Werkzeuge und Entwürfe
+.claude/
+mockups/

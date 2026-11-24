@@ -1,0 +1,12 @@
+<Project>
+  <!--
+    Build-Ausgaben (bin/obj) liegen außerhalb des Quellordners unter %LOCALAPPDATA%\Sensorium\build,
+    damit synchronisierte Ordner (OneDrive, Synology Drive …) nicht bei jedem Build tausende Dateien übertragen.
+    Eigener Ort: dotnet build -p:SensoriumBuildRoot=C:\pfad\
+  -->
+  <PropertyGroup>
+    <SensoriumBuildRoot Condition="'$(SensoriumBuildRoot)' == ''">$(LOCALAPPDATA)\Sensorium\build\</SensoriumBuildRoot>
+    <BaseOutputPath>$(SensoriumBuildRoot)bin\$(MSBuildProjectName)\</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(SensoriumBuildRoot)obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>

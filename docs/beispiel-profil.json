@@ -1,0 +1,833 @@
+{
+  "name": "Beispiel",
+  "version": 3,
+  "canvas": { "width": 1920, "height": 1080 },
+  "theme": {
+    "locale": "de-DE",
+    "background": "aurora",
+    "colors": {
+      "bg": "#05090f",
+      "text": "#e9f1f8",
+      "muted": "#8596ab",
+      "dim": "#4f5d70",
+      "line": "rgba(140,190,255,.085)",
+      "track": "rgba(255,255,255,.065)",
+      "accent": "#38d2ef",
+      "accent2": "#6d8cff",
+      "up": "#a08cff",
+      "warn": "#ffb446",
+      "crit": "#ff5876",
+      "ok": "#4fe0a0"
+    },
+    "gradients": { "accent": ["#22c3ec", "#6d8cff"], "warn": ["#ffd060", "#ff8a3d"], "crit": ["#ff8a96", "#ff3d6e"], "ok": ["#5ff0b0", "#2bbf8a"], "up": ["#b9a6ff", "#8a6cff"] },
+    "fonts": { "num": "Bahnschrift, 'Segoe UI', sans-serif", "ui": "'Segoe UI Variable Text', 'Segoe UI', sans-serif" }
+  },
+  "formulas": {
+    "pc.wall.cost": { "label": "PC heute (Cent)", "expr": "pc.wall.today * strom.preis.ct" },
+    "pc.rest": { "label": "PC ohne CPU und GPU", "expr": "pos(pc.wall - cpu.power - gpu.power)" },
+    "pc.wall": { "label": "PC an der Steckdose", "expr": "{ha:sensor.pc_steckdose_leistung}" },
+    "pc.wall.today": { "label": "PC heute (kWh)", "expr": "{ha:sensor.pc_steckdose_heute}" },
+    "strom.preis.ct": { "label": "Strompreis (Cent je kWh)", "expr": "{ha:input_number.strompreis} * 100" }
+  },
+  "switcher": { "y": 1060 },
+  "autoPage": [
+    {
+      "when": { "sensor": "fps.current", "gt": 0 },
+      "page": "pc"
+    }
+  ],
+  "pages": [
+    {
+      "id": "pc",
+      "name": "PC-Übersicht",
+      "short": "PC",
+      "widgets": [
+        {
+          "type": "card",
+          "x": 24,
+          "y": 24,
+          "w": 480,
+          "h": 150,
+          "children": [
+            { "type": "clock", "show": "time", "x": 28, "y": 12, "w": 270, "h": 100, "size": 94 },
+            { "type": "clock", "show": "date", "x": 32, "y": 114, "w": 300, "h": 24 },
+            { "type": "label", "text": "Laufzeit", "x": 252, "y": 28, "w": 200, "h": 14, "align": "right" },
+            { "type": "text", "text": "{sys.uptime|dur}", "x": 232, "y": 46, "w": 220, "h": 32, "size": 24, "font": "num", "weight": 300, "color": "@text", "align": "right" },
+            {
+              "type": "status",
+              "x": 172,
+              "y": 88,
+              "w": 280,
+              "h": 22,
+              "align": "right",
+              "checks": [
+                { "sensor": "cpu.temp", "warn": 70, "crit": 85, "label": "CPU-Temperatur" },
+                { "sensor": "gpu.temp", "warn": 75, "crit": 85, "label": "GPU-Temperatur" },
+                { "sensor": "gpu.hotspot", "warn": 90, "crit": 100, "label": "GPU-Hotspot" },
+                { "sensor": "cooler.liquid", "warn": 40, "crit": 45, "label": "Kühlmittel" },
+                { "sensor": "drive.C.temp", "warn": 60, "crit": 70, "label": "Laufwerk C:" },
+                { "sensor": "drive.D.temp", "warn": 60, "crit": 70, "label": "Laufwerk D:" },
+                { "sensor": "drive.E.temp", "warn": 60, "crit": 70, "label": "Laufwerk E:" }
+              ],
+              "activeIf": { "sensor": "fps.current", "gt": 0 },
+              "activeText": "Spielmodus",
+              "okText": "Alles normal"
+            }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 524,
+          "y": 24,
+          "w": 540,
+          "h": 150,
+          "label": "Netzwerk",
+          "meta": "{sys.net.name} · {sys.net.speed}",
+          "children": [
+            { "type": "box", "x": 270, "y": 64, "w": 1, "h": 50, "fill": "@line" },
+            { "type": "label", "text": "Download", "icon": "down", "color": "@accent", "x": 28, "y": 62, "w": 220, "h": 16 },
+            { "type": "value", "sensor": "sys.net.down", "format": "rate", "x": 28, "y": 76, "w": 240, "h": 50, "size": 42, "unitSize": 18 },
+            { "type": "spark", "sensor": "sys.net.down", "x": 0, "y": 116, "w": 270, "h": 34, "color": "@accent", "fill": 0.2 },
+            { "type": "label", "text": "Upload", "icon": "up", "color": "@up", "x": 298, "y": 62, "w": 220, "h": 16 },
+            { "type": "value", "sensor": "sys.net.up", "format": "rate", "x": 298, "y": 76, "w": 240, "h": 50, "size": 42, "unitSize": 18 },
+            { "type": "spark", "sensor": "sys.net.up", "x": 270, "y": 116, "w": 270, "h": 34, "color": "@up", "fill": 0.2 }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 1084,
+          "y": 24,
+          "w": 812,
+          "h": 150,
+          "children": [
+            {
+              "type": "group",
+              "x": 0,
+              "y": 0,
+              "w": 812,
+              "h": 150,
+              "visibleIf": { "sensor": "pc.wall", "exists": true },
+              "hiddenIf": { "sensor": "fps.current", "gt": 0 },
+              "children": [
+                { "type": "header", "text": "Leistungsaufnahme", "x": 28, "y": 26, "w": 300, "h": 14 },
+                {
+                  "type": "text",
+                  "text": "an der Steckdose · heute {pc.wall.today:2} kWh · {pc.wall.cost:0} ct",
+                  "emph": true,
+                  "x": 340,
+                  "y": 24,
+                  "w": 444,
+                  "h": 18,
+                  "align": "right",
+                  "visibleIf": { "sensor": "pc.wall.cost", "exists": true }
+                },
+                {
+                  "type": "text",
+                  "text": "an der Steckdose · heute {pc.wall.today:2} kWh",
+                  "emph": true,
+                  "x": 340,
+                  "y": 24,
+                  "w": 444,
+                  "h": 18,
+                  "align": "right",
+                  "visibleIf": [
+                    { "sensor": "pc.wall.today", "exists": true },
+                    { "sensor": "pc.wall.cost", "exists": false }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "an der Steckdose",
+                  "x": 340,
+                  "y": 24,
+                  "w": 444,
+                  "h": 18,
+                  "align": "right",
+                  "visibleIf": { "sensor": "pc.wall.today", "exists": false }
+                },
+                { "type": "value", "sensor": "pc.wall", "unit": "W", "x": 28, "y": 50, "w": 220, "h": 90, "size": 80, "unitSize": 22, "unitGap": 8 },
+                { "type": "spark", "sensor": "pc.wall", "x": 250, "y": 58, "w": 280, "h": 70, "color": "@accent", "grid": true, "fill": 0.24 },
+                { "type": "stat", "label": "CPU", "sensor": "cpu.power", "unit": "W", "x": 556, "y": 64, "w": 76, "h": 60 },
+                { "type": "stat", "label": "GPU", "sensor": "gpu.power", "unit": "W", "x": 632, "y": 64, "w": 76, "h": 60 },
+                { "type": "stat", "label": "Rest", "sensor": "pc.rest", "unit": "W", "x": 708, "y": 64, "w": 76, "h": 60, "color": "@muted" }
+              ]
+            },
+            {
+              "type": "group",
+              "x": 0,
+              "y": 0,
+              "w": 812,
+              "h": 150,
+              "visibleIf": { "sensor": "pc.wall", "exists": false },
+              "hiddenIf": { "sensor": "fps.current", "gt": 0 },
+              "children": [
+                { "type": "header", "text": "Leistungsaufnahme", "x": 28, "y": 26, "w": 300, "h": 14 },
+                { "type": "text", "text": "CPU + GPU", "x": 584, "y": 24, "w": 200, "h": 18, "align": "right" },
+                { "type": "value", "sensor": "power.total", "unit": "W", "x": 28, "y": 50, "w": 220, "h": 90, "size": 80, "unitSize": 22, "unitGap": 8 },
+                { "type": "spark", "sensor": "power.total", "x": 250, "y": 58, "w": 300, "h": 70, "color": "@accent", "grid": true, "fill": 0.24 },
+                { "type": "stat", "label": "CPU", "sensor": "cpu.power", "unit": "W", "x": 584, "y": 64, "w": 90, "h": 60 },
+                { "type": "stat", "label": "GPU", "sensor": "gpu.power", "unit": "W", "x": 684, "y": 64, "w": 100, "h": 60 }
+              ]
+            },
+            {
+              "type": "group",
+              "x": 0,
+              "y": 0,
+              "w": 812,
+              "h": 150,
+              "visibleIf": { "sensor": "fps.current", "gt": 0 },
+              "children": [
+                { "type": "header", "text": "Framerate", "color": "@ok", "x": 28, "y": 26, "w": 170, "h": 14 },
+                { "type": "text", "text": "{fps.app}", "x": 200, "y": 24, "w": 180, "h": 18, "align": "right" },
+                { "type": "value", "sensor": "fps.current", "unit": "FPS", "x": 28, "y": 52, "w": 190, "h": 80, "size": 72, "unitSize": 18, "unitGap": 8 },
+                { "type": "spark", "sensor": "fps.current", "x": 226, "y": 58, "w": 154, "h": 50, "color": "@ok", "grid": true, "fill": 0.24 },
+                { "type": "text", "text": "Ø {fps.current:0|avgpos} FPS · {fps.frametime:1} ms", "emph": true, "size": 13, "x": 226, "y": 114, "w": 170, "h": 18 },
+                { "type": "box", "x": 406, "y": 30, "w": 1, "h": 92, "fill": "@line" },
+                { "type": "header", "text": "Leistungsaufnahme", "x": 434, "y": 26, "w": 300, "h": 14 },
+                {
+                  "type": "value",
+                  "sensor": "pc.wall",
+                  "unit": "W",
+                  "x": 434,
+                  "y": 52,
+                  "w": 200,
+                  "h": 80,
+                  "size": 72,
+                  "unitSize": 20,
+                  "unitGap": 8,
+                  "visibleIf": { "sensor": "pc.wall", "exists": true }
+                },
+                {
+                  "type": "value",
+                  "sensor": "power.total",
+                  "unit": "W",
+                  "x": 434,
+                  "y": 52,
+                  "w": 200,
+                  "h": 80,
+                  "size": 72,
+                  "unitSize": 20,
+                  "unitGap": 8,
+                  "visibleIf": { "sensor": "pc.wall", "exists": false }
+                },
+                { "type": "stat", "label": "CPU", "sensor": "cpu.power", "unit": "W", "x": 640, "y": 64, "w": 72, "h": 60 },
+                { "type": "stat", "label": "GPU", "sensor": "gpu.power", "unit": "W", "x": 722, "y": 64, "w": 72, "h": 60 }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 24,
+          "y": 194,
+          "w": 926,
+          "h": 540,
+          "label": "Prozessor",
+          "title": "{cpu.name}",
+          "chips": ["{sys.cpu.cores:0} Kerne · {sys.cpu.threads:0} Threads"],
+          "divider": 108,
+          "children": [
+            {
+              "type": "gauge",
+              "sensor": "cpu.temp",
+              "label": "Temperatur",
+              "unit": "°C",
+              "min": 20,
+              "max": 100,
+              "x": 18,
+              "y": 122,
+              "w": 380,
+              "h": 330,
+              "rules": [
+                { "from": 70, "color": "@warn" },
+                { "from": 85, "color": "@crit", "pulse": true }
+              ]
+            },
+            { "type": "metric", "label": "Auslastung", "sensor": "cpu.load", "unit": "%", "max": 100, "x": 432, "y": 130, "w": 466, "h": 80 },
+            { "type": "metric", "label": "Takt", "sensor": "cpu.clock", "unit": "GHz", "scale": 0.001, "decimals": 2, "max": 5.2, "x": 432, "y": 210, "w": 466, "h": 80 },
+            { "type": "metric", "label": "Leistung", "sensor": "cpu.power", "unit": "W", "decimals": 1, "max": 200, "x": 432, "y": 290, "w": 466, "h": 80 },
+            { "type": "metric", "label": "Pumpe", "sensor": "cpu.pump", "unit": "RPM", "max": 3000, "x": 432, "y": 370, "w": 466, "h": 80 },
+            { "type": "label", "text": "Threads", "x": 28, "y": 462, "w": 300, "h": 14 },
+            { "type": "text", "text": "Heißester Kern {cpu.temp.max:0} °C", "emph": true, "size": 13, "x": 498, "y": 457, "w": 400, "h": 22, "align": "right" },
+            { "type": "threads", "sensor": "cpu.threads", "warnAt": 85, "x": 28, "y": 486, "w": 870, "h": 38 }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 970,
+          "y": 194,
+          "w": 926,
+          "h": 540,
+          "label": "Grafikkarte",
+          "title": "{gpu.name}",
+          "chips": ["{gpu.vram.total:0} GB VRAM"],
+          "divider": 108,
+          "children": [
+            {
+              "type": "gauge",
+              "sensor": "gpu.temp",
+              "label": "Temperatur",
+              "unit": "°C",
+              "min": 20,
+              "max": 100,
+              "x": 18,
+              "y": 122,
+              "w": 380,
+              "h": 330,
+              "rules": [
+                { "from": 75, "color": "@warn" },
+                { "from": 85, "color": "@crit", "pulse": true }
+              ]
+            },
+            { "type": "metric", "label": "Auslastung", "sensor": "gpu.load", "unit": "%", "max": 100, "x": 432, "y": 130, "w": 466, "h": 80 },
+            { "type": "metric", "label": "Takt", "sensor": "gpu.clock", "unit": "MHz", "max": 3000, "x": 432, "y": 210, "w": 466, "h": 80 },
+            { "type": "metric", "label": "Leistung", "sensor": "gpu.power", "unit": "W", "decimals": 1, "max": 300, "x": 432, "y": 290, "w": 466, "h": 80 },
+            {
+              "type": "metric",
+              "label": "Lüfter",
+              "sensor": "gpu.fan",
+              "unit": "RPM",
+              "max": 3000,
+              "x": 432,
+              "y": 370,
+              "w": 466,
+              "h": 80,
+              "badge": {
+                "text": "ZERO RPM",
+                "if": { "sensor": "gpu.fan", "lt": 1 }
+              }
+            },
+            { "type": "label", "text": "Grafikspeicher", "x": 28, "y": 462, "w": 300, "h": 14 },
+            { "type": "text", "text": "{gpu.vram.used:1} / {gpu.vram.total:0} GB", "emph": true, "size": 13, "x": 498, "y": 457, "w": 400, "h": 22, "align": "right" },
+            { "type": "bar", "sensor": "gpu.vram.used", "max": "gpu.vram.total", "x": 28, "y": 485, "w": 870, "h": 10 },
+            { "type": "text", "text": "Hotspot {gpu.hotspot:0} °C", "emph": true, "size": 13, "x": 28, "y": 505, "w": 130, "h": 22 },
+            { "type": "text", "text": "Speichertakt {gpu.memclock:0} MHz", "emph": true, "size": 13, "x": 160, "y": 505, "w": 180, "h": 22 },
+            {
+              "type": "text",
+              "text": "Spannung {gpu.voltage:3} V",
+              "emph": true,
+              "size": 13,
+              "x": 350,
+              "y": 505,
+              "w": 180,
+              "h": 22,
+              "hiddenIf": { "sensor": "gpu.voltage", "exists": false }
+            }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 24,
+          "y": 754,
+          "w": 600,
+          "h": 302,
+          "label": "Arbeitsspeicher",
+          "meta": "{sys.ram.info}",
+          "children": [
+            { "type": "ring", "sensor": "sys.ram.pct", "label": "Belegt", "x": 26, "y": 84, "w": 180, "h": 180 },
+            { "type": "kv", "label": "Belegt", "sensor": "sys.ram.used", "decimals": 1, "unit": "GB", "x": 236, "y": 78, "w": 336, "h": 34 },
+            { "type": "kv", "label": "Verfügbar", "sensor": "sys.ram.free", "decimals": 1, "unit": "GB", "x": 236, "y": 112, "w": 336, "h": 34 },
+            { "type": "label", "text": "Verlauf · 60 s", "x": 236, "y": 162, "w": 300, "h": 14 },
+            { "type": "spark", "sensor": "sys.ram.used", "max": "sys.ram.total", "x": 236, "y": 182, "w": 336, "h": 82, "grid": true, "fill": 0.26 }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 644,
+          "y": 754,
+          "w": 620,
+          "h": 302,
+          "label": "Laufwerke",
+          "children": [
+            { "type": "drive", "letter": "C", "x": 28, "y": 70, "w": 564, "h": 100 },
+            { "type": "drive", "letter": "#2", "x": 28, "y": 182, "w": 564, "h": 100 }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 1284,
+          "y": 754,
+          "w": 612,
+          "h": 302,
+          "label": "Kühlung",
+          "meta": "{cooler.name}",
+          "children": [
+            { "type": "fanlist", "x": 20, "y": 64, "w": 572, "h": 218, "columns": 2, "max": 6, "hideZero": true, "maxRpm": 3000 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "zuhause",
+      "name": "Zuhause",
+      "short": "Zuhause",
+      "requires": "ha",
+      "widgets": [
+        {
+          "type": "card",
+          "x": 24,
+          "y": 24,
+          "w": 480,
+          "h": 150,
+          "children": [
+            { "type": "clock", "show": "time", "x": 28, "y": 12, "w": 270, "h": 100, "size": 94 },
+            { "type": "clock", "show": "date", "x": 32, "y": 114, "w": 300, "h": 24 },
+            {
+              "type": "group",
+              "x": 0,
+              "y": 0,
+              "w": 480,
+              "h": 150,
+              "visibleIf": { "sensor": "ha:sun.sun", "eq": "above_horizon" },
+              "children": [
+                { "type": "label", "text": "Sonnenuntergang", "x": 252, "y": 28, "w": 200, "h": 14, "align": "right" },
+                { "type": "text", "text": "{ha:sun.sun@next_setting|clock}", "x": 232, "y": 46, "w": 220, "h": 32, "size": 24, "font": "num", "weight": 300, "color": "@text", "align": "right" }
+              ]
+            },
+            {
+              "type": "group",
+              "x": 0,
+              "y": 0,
+              "w": 480,
+              "h": 150,
+              "hiddenIf": { "sensor": "ha:sun.sun", "eq": "above_horizon" },
+              "children": [
+                { "type": "label", "text": "Sonnenaufgang", "x": 252, "y": 28, "w": 200, "h": 14, "align": "right" },
+                { "type": "text", "text": "{ha:sun.sun@next_rising|clock}", "x": 232, "y": 46, "w": 220, "h": 32, "size": 24, "font": "num", "weight": 300, "color": "@text", "align": "right" }
+              ]
+            },
+            {
+              "type": "status",
+              "x": 152,
+              "y": 88,
+              "w": 300,
+              "h": 22,
+              "align": "right",
+              "checks": [
+                {
+                  "when": [
+                    { "sensor": "ha:lock.haustuer", "eq": "unlocked" },
+                    { "sensor": "ha:person.alex", "ne": "home" },
+                    { "sensor": "ha:person.sam", "ne": "home" }
+                  ],
+                  "level": "crit",
+                  "text": "Haustür offen, niemand da"
+                },
+                { "sensor": "ha:binary_sensor.fenster_kueche", "is": "on", "text": "Küchenfenster offen" },
+                { "sensor": "ha:binary_sensor.fenster_bad", "is": "on", "text": "Badfenster offen" }
+              ],
+              "okText": "Alles in Ordnung"
+            }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 524,
+          "y": 24,
+          "w": 540,
+          "h": 150,
+          "label": "Wetter",
+          "meta": "Zuhause",
+          "children": [
+            { "type": "weather", "entity": "weather.forecast_home", "x": 24, "y": 54, "w": 300, "h": 90 },
+            { "type": "box", "x": 340, "y": 62, "w": 1, "h": 64, "fill": "@line" },
+            { "type": "forecast", "entity": "weather.forecast_home", "days": 3, "x": 352, "y": 58, "w": 170, "h": 80 }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 1084,
+          "y": 24,
+          "w": 812,
+          "h": 150,
+          "label": "Zuhause",
+          "children": [
+            {
+              "type": "people",
+              "x": 28,
+              "y": 66,
+              "w": 360,
+              "h": 50,
+              "items": [
+                { "name": "Alex", "sensor": "ha:person.alex" },
+                { "name": "Sam", "sensor": "ha:person.sam" }
+              ]
+            },
+            { "type": "box", "x": 400, "y": 58, "w": 1, "h": 72, "fill": "@line" },
+            {
+              "type": "states",
+              "x": 426,
+              "y": 58,
+              "w": 358,
+              "h": 72,
+              "rows": [
+                {
+                  "label": "Haustür",
+                  "icon": "lock",
+                  "sensor": "ha:lock.haustuer#state",
+                  "icons": { "unlocked": "unlock", "open": "unlock" },
+                  "map": {
+                    "locked": ["Abgeschlossen", "@ok"],
+                    "unlocked": ["Aufgeschlossen", "@warn"],
+                    "open": ["Offen", "@warn"],
+                    "jammed": ["Blockiert", "@crit"],
+                    "unavailable": ["nicht erreichbar", null]
+                  }
+                },
+                {
+                  "label": "Fenster",
+                  "icon": "window",
+                  "active": "on",
+                  "activeText": "{names} offen",
+                  "idleText": "Alle zu",
+                  "group": [
+                    { "sensor": "ha:binary_sensor.fenster_bad", "name": "Bad" },
+                    { "sensor": "ha:binary_sensor.fenster_kueche", "name": "Küche" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 24,
+          "y": 194,
+          "w": 926,
+          "h": 540,
+          "label": "Energie",
+          "meta": "Strompreis {strom.preis.ct:2} ct/kWh",
+          "children": [
+            {
+              "type": "group",
+              "x": 0,
+              "y": 0,
+              "w": 600,
+              "h": 190,
+              "hiddenIf": { "sensor": "ha:sensor.netz_leistung", "lt": 0 },
+              "children": [
+                { "type": "label", "text": "Netzbezug", "x": 28, "y": 72, "w": 300, "h": 14 },
+                { "type": "value", "sensor": "ha:sensor.netz_leistung", "unit": "W", "x": 28, "y": 88, "w": 400, "h": 92, "size": 84, "unitSize": 26, "unitGap": 8 }
+              ]
+            },
+            {
+              "type": "group",
+              "x": 0,
+              "y": 0,
+              "w": 600,
+              "h": 190,
+              "visibleIf": { "sensor": "ha:sensor.netz_leistung", "lt": 0 },
+              "children": [
+                { "type": "label", "text": "Einspeisung", "color": "@ok", "x": 28, "y": 72, "w": 300, "h": 14 },
+                {
+                  "type": "value",
+                  "sensor": "ha:sensor.netz_leistung",
+                  "abs": true,
+                  "unit": "W",
+                  "color": "@ok-text",
+                  "x": 28,
+                  "y": 88,
+                  "w": 400,
+                  "h": 92,
+                  "size": 84,
+                  "unitSize": 26,
+                  "unitGap": 8
+                }
+              ]
+            },
+            { "type": "text", "text": "am Stromzähler · Verlauf 10 min", "x": 30, "y": 182, "w": 400, "h": 20, "size": 15 },
+            { "type": "spark", "sensor": "ha:sensor.netz_leistung", "every": 10, "min": "auto", "x": 28, "y": 214, "w": 540, "h": 96, "color": "@accent", "grid": true, "fill": 0.26 },
+            { "type": "box", "x": 600, "y": 72, "w": 1, "h": 238, "fill": "@line" },
+            { "type": "label", "text": "Solar", "x": 626, "y": 72, "w": 160, "h": 14 },
+            { "type": "ring", "sensor": "ha:sensor.batterie_ladestand", "label": "Akku", "color": "@warn", "x": 620, "y": 98, "w": 150, "h": 150 },
+            {
+              "type": "text",
+              "text": "lädt mit {ha:sensor.batterie_ladeleistung:0} W",
+              "x": 600,
+              "y": 262,
+              "w": 190,
+              "h": 18,
+              "size": 13,
+              "align": "center",
+              "visibleIf": { "sensor": "ha:sensor.batterie_ladeleistung", "gt": 0 }
+            },
+            {
+              "type": "text",
+              "text": "gibt {ha:sensor.batterie_entladeleistung:0} W ab",
+              "x": 600,
+              "y": 262,
+              "w": 190,
+              "h": 18,
+              "size": 13,
+              "align": "center",
+              "visibleIf": { "sensor": "ha:sensor.batterie_entladeleistung", "gt": 0 }
+            },
+            { "type": "stat", "label": "PV jetzt", "sensor": "ha:sensor.pv_leistung", "unit": "W", "color": "#ffd08a", "x": 790, "y": 100, "w": 110, "h": 56 },
+            { "type": "stat", "label": "Ins Haus", "sensor": "ha:sensor.pv_ins_haus", "unit": "W", "x": 790, "y": 166, "w": 110, "h": 56 },
+            { "type": "stat", "label": "Prognose", "sensor": "ha:sensor.pv_prognose_heute", "unit": "kWh", "decimals": 1, "x": 790, "y": 232, "w": 110, "h": 56 },
+            { "type": "box", "x": 28, "y": 334, "w": 870, "h": 1, "fill": "@line" },
+            { "type": "label", "text": "Verbraucher jetzt", "x": 28, "y": 356, "w": 300, "h": 14 },
+            {
+              "type": "consumers",
+              "x": 28,
+              "y": 384,
+              "w": 870,
+              "h": 140,
+              "columns": 2,
+              "rows": 3,
+              "gap": 50,
+              "items": [
+                { "label": "PC", "sensor": "pc.wall", "tag": "dieser PC" },
+                { "label": "Schreibtisch", "sensor": "ha:sensor.schreibtisch_leistung" },
+                { "label": "Netzwerk", "sensor": "ha:sensor.netzwerk_leistung" },
+                { "label": "Kühlschrank", "sensor": "ha:sensor.kuehlschrank_leistung" },
+                { "label": "Fernseher", "sensor": "ha:sensor.fernseher_leistung" },
+                { "label": "Spülmaschine", "sensor": "ha:sensor.spuelmaschine_leistung" },
+                { "label": "Waschmaschine", "sensor": "ha:sensor.waschmaschine_leistung" },
+                { "label": "3D-Drucker", "sensor": "ha:sensor.drucker_leistung" }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 970,
+          "y": 194,
+          "w": 926,
+          "h": 540,
+          "label": "Raumklima",
+          "meta": "Büro",
+          "children": [
+            { "type": "label", "text": "Temperatur", "x": 28, "y": 72, "w": 280, "h": 14 },
+            { "type": "value", "sensor": "ha:sensor.buero_temperatur", "unit": "°C", "decimals": 1, "x": 28, "y": 88, "w": 290, "h": 92, "size": 84, "unitSize": 26, "unitGap": 8 },
+            { "type": "box", "x": 330, "y": 72, "w": 1, "h": 150, "fill": "@line" },
+            { "type": "label", "text": "Luftfeuchte", "x": 356, "y": 72, "w": 260, "h": 14 },
+            {
+              "type": "value",
+              "sensor": "ha:sensor.buero_luftfeuchte",
+              "unit": "%",
+              "x": 356,
+              "y": 88,
+              "w": 260,
+              "h": 92,
+              "size": 84,
+              "unitSize": 26,
+              "unitGap": 8,
+              "rules": [
+                { "from": 0, "color": "@warn-text" },
+                { "from": 40, "color": "@text" },
+                { "from": 60.5, "color": "@warn-text" }
+              ]
+            },
+            { "type": "range", "sensor": "ha:sensor.buero_luftfeuchte", "min": 0, "max": 100, "from": 40, "to": 60, "text": "Wohlfühlbereich 40–60 %", "x": 356, "y": 194, "w": 250, "h": 30 },
+            { "type": "box", "x": 640, "y": 72, "w": 1, "h": 150, "fill": "@line" },
+            { "type": "label", "text": "Hinweis", "x": 666, "y": 72, "w": 232, "h": 14 },
+            {
+              "type": "group",
+              "x": 666,
+              "y": 96,
+              "w": 232,
+              "h": 120,
+              "visibleIf": { "sensor": "ha:binary_sensor.fenster_kueche", "eq": "on" },
+              "children": [
+                { "type": "text", "text": "Küchenfenster offen", "x": 0, "y": 0, "w": 232, "h": 28, "size": 20, "color": "@warn-text" },
+                { "type": "text", "text": "seit {ha:binary_sensor.fenster_kueche#changed|clock} Uhr", "x": 0, "y": 34, "w": 232, "h": 20, "size": 15 }
+              ]
+            },
+            {
+              "type": "group",
+              "x": 666,
+              "y": 96,
+              "w": 232,
+              "h": 120,
+              "visibleIf": [
+                { "sensor": "ha:binary_sensor.fenster_kueche", "ne": "on" },
+                { "sensor": "ha:sensor.buero_luftfeuchte", "gt": 60 }
+              ],
+              "children": [
+                { "type": "text", "text": "Etwas feucht", "x": 0, "y": 0, "w": 232, "h": 28, "size": 20, "color": "@warn-text" },
+                { "type": "text", "text": "Kurz stoßlüften hilft.", "x": 0, "y": 34, "w": 232, "h": 20, "size": 15 }
+              ]
+            },
+            {
+              "type": "group",
+              "x": 666,
+              "y": 96,
+              "w": 232,
+              "h": 120,
+              "visibleIf": [
+                { "sensor": "ha:binary_sensor.fenster_kueche", "ne": "on" },
+                { "sensor": "ha:sensor.buero_luftfeuchte", "lte": 60 }
+              ],
+              "children": [
+                { "type": "text", "text": "Alles im grünen Bereich", "x": 0, "y": 0, "w": 232, "h": 28, "size": 20, "color": "@ok-text" },
+                { "type": "text", "text": "Fenster zu, Luft passt.", "x": 0, "y": 34, "w": 232, "h": 20, "size": 15 }
+              ]
+            },
+            { "type": "label", "text": "Heizung", "x": 28, "y": 262, "w": 300, "h": 14 },
+            {
+              "type": "climate",
+              "x": 28,
+              "y": 290,
+              "w": 870,
+              "h": 232,
+              "rows": [
+                { "label": "Wohnzimmer", "entity": "climate.wohnzimmer" },
+                { "label": "Bad", "entity": "climate.bad", "window": "ha:binary_sensor.fenster_bad" },
+                { "label": "Küche", "entity": "climate.kueche", "window": "ha:binary_sensor.fenster_kueche" },
+                { "label": "Büro", "entity": "climate.buero", "sensor": "ha:sensor.buero_temperatur" }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 24,
+          "y": 754,
+          "w": 600,
+          "h": 302,
+          "label": "Auto",
+          "meta": "Stand {ha:sensor.auto_stand|when}",
+          "children": [
+            { "type": "icon", "name": "car", "size": 26, "color": "@accent", "x": 28, "y": 76, "w": 26, "h": 26 },
+            { "type": "text", "text": "Elektroauto", "x": 66, "y": 72, "w": 130, "h": 32, "size": 22, "color": "@text" },
+            {
+              "type": "text",
+              "text": "{ha:device_tracker.auto|map:home=zuhause,not_home=unterwegs} · {ha:lock.auto_tueren|map:locked=verriegelt,unlocked=offen}",
+              "x": 200,
+              "y": 79,
+              "w": 190,
+              "h": 20,
+              "size": 15
+            },
+            { "type": "value", "sensor": "ha:sensor.auto_akku", "unit": "%", "x": 392, "y": 62, "w": 180, "h": 50, "size": 34, "unitSize": 18, "unitGap": 3, "align": "right" },
+            {
+              "type": "bar",
+              "sensor": "ha:sensor.auto_akku",
+              "max": 100,
+              "marker": "ha:number.auto_ladelimit",
+              "x": 28,
+              "y": 118,
+              "w": 544,
+              "h": 10,
+              "rules": [
+                { "from": 0, "color": "@crit" },
+                { "from": 20, "color": "@accent" }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "{ha:sensor.auto_reichweite:0} km Reichweite · {ha:binary_sensor.auto_laedt|map:on=lädt,off=lädt nicht} · Ladelimit {ha:number.auto_ladelimit:0} %",
+              "x": 28,
+              "y": 140,
+              "w": 544,
+              "h": 20,
+              "size": 15
+            },
+            { "type": "box", "x": 28, "y": 184, "w": 544, "h": 1, "fill": "@line" },
+            { "type": "stat", "label": "Innen", "sensor": "ha:sensor.auto_innen", "unit": "°C", "decimals": 1, "x": 28, "y": 206, "w": 150, "h": 60 },
+            { "type": "stat", "label": "Außen", "sensor": "ha:sensor.auto_aussen", "unit": "°C", "decimals": 1, "x": 200, "y": 206, "w": 150, "h": 60 },
+            { "type": "stat", "label": "Kilometerstand", "sensor": "ha:sensor.auto_kilometerstand", "unit": "km", "x": 372, "y": 206, "w": 200, "h": 60, "align": "right" }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 644,
+          "y": 754,
+          "w": 620,
+          "h": 302,
+          "label": "3D-Drucker",
+          "meta": "Werkstatt",
+          "children": [
+            {
+              "type": "group",
+              "x": 0,
+              "y": 0,
+              "w": 620,
+              "h": 302,
+              "visibleIf": { "sensor": "ha:sensor.drucker_status#state", "in": ["running", "pause", "prepare", "init", "slicing"] },
+              "children": [
+                { "type": "value", "sensor": "ha:sensor.drucker_fortschritt", "unit": "%", "x": 28, "y": 62, "w": 170, "h": 80, "size": 72, "unitSize": 22, "unitGap": 6 },
+                { "type": "text", "text": "{ha:sensor.drucker_status#state|de} · {ha:sensor.drucker_auftrag}", "x": 200, "y": 74, "w": 392, "h": 28, "size": 20, "color": "@text" },
+                { "type": "text", "text": "noch {ha:sensor.drucker_restzeit|mins} · fertig ca. {ha:sensor.drucker_ende|clock} Uhr", "x": 200, "y": 106, "w": 392, "h": 20, "size": 15 },
+                { "type": "bar", "sensor": "ha:sensor.drucker_fortschritt", "max": 100, "x": 28, "y": 160, "w": 564, "h": 10 },
+                { "type": "stat", "label": "Schicht", "text": "{ha:sensor.drucker_schicht:0} / {ha:sensor.drucker_schichten:0}", "size": 26, "x": 28, "y": 196, "w": 170, "h": 60 },
+                { "type": "stat", "label": "Düse", "sensor": "ha:sensor.drucker_duese", "unit": "°C", "size": 26, "x": 210, "y": 196, "w": 110, "h": 60 },
+                { "type": "stat", "label": "Bett", "sensor": "ha:sensor.drucker_bett", "unit": "°C", "size": 26, "x": 340, "y": 196, "w": 110, "h": 60 },
+                { "type": "stat", "label": "Leistung", "sensor": "ha:sensor.drucker_leistung", "unit": "W", "size": 26, "x": 470, "y": 196, "w": 122, "h": 60, "align": "right" }
+              ]
+            },
+            {
+              "type": "group",
+              "x": 0,
+              "y": 0,
+              "w": 620,
+              "h": 302,
+              "hiddenIf": { "sensor": "ha:sensor.drucker_status#state", "in": ["running", "pause", "prepare", "init", "slicing"] },
+              "children": [
+                {
+                  "type": "state",
+                  "sensor": "ha:sensor.drucker_status#state",
+                  "empty": "Aus",
+                  "size": 44,
+                  "font": "num",
+                  "weight": 300,
+                  "map": { "idle": ["Bereit", "@ok"], "finish": ["Fertig", "@ok"], "failed": ["Fehlgeschlagen", "@crit"], "offline": ["Aus", null], "unavailable": ["Aus", null], "unknown": ["Aus", null] },
+                  "x": 28,
+                  "y": 66,
+                  "w": 400,
+                  "h": 56
+                },
+                { "type": "icon", "name": "printer", "size": 72, "color": "@dim", "x": 520, "y": 62, "w": 72, "h": 72 },
+                { "type": "text", "text": "Steckdose {ha:sensor.drucker_leistung:0} W", "emph": true, "x": 28, "y": 150, "w": 564, "h": 20, "size": 15 }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 1284,
+          "y": 754,
+          "w": 612,
+          "h": 302,
+          "label": "Geräte",
+          "meta": "Klick schaltet",
+          "children": [
+            { "type": "tile", "label": "Schreibtisch-LED", "icon": "bulb", "entity": "light.schreibtisch", "toggle": true, "x": 20, "y": 64, "w": 280, "h": 103 },
+            { "type": "tile", "label": "Regal-LED", "icon": "bulb", "entity": "light.regal", "toggle": true, "x": 312, "y": 64, "w": 280, "h": 103 },
+            {
+              "type": "tile",
+              "label": "Waschmaschine",
+              "icon": "wash",
+              "kind": "device",
+              "entity": "input_boolean.waschmaschine_laeuft",
+              "onText": "Läuft",
+              "offText": "Aus",
+              "subOn": "seit {ha:input_datetime.waschmaschine_start|clock}",
+              "subOff": "zuletzt {ha:input_datetime.waschmaschine_start|when}",
+              "x": 20,
+              "y": 179,
+              "w": 280,
+              "h": 103
+            },
+            {
+              "type": "tile",
+              "label": "Spülmaschine",
+              "icon": "dish",
+              "kind": "device",
+              "sensor": "ha:sensor.spuelmaschine_leistung",
+              "onIf": { "sensor": "ha:sensor.spuelmaschine_leistung", "gt": 5 },
+              "onText": "Läuft",
+              "offText": "Aus",
+              "subOn": "{ha:sensor.spuelmaschine_leistung:0} W",
+              "x": 312,
+              "y": 179,
+              "w": 280,
+              "h": 103
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Sensorium – Panel bearbeiten</title>
+<link rel="stylesheet" href="css/panel.css">
+<link rel="stylesheet" href="css/editor.css">
+</head>
+<body class="editor">
+<header id="ed-top">
+  <div class="brand"><span class="logo"></span>Sensorium <span>Editor</span></div>
+  <nav id="ed-pages"></nav>
+  <div class="tools">
+    <button id="ed-undo" class="icon-btn" title="Rückgängig (Strg+Z)"></button>
+    <button id="ed-redo" class="icon-btn" title="Wiederholen (Strg+Y)"></button>
+    <span class="sep"></span>
+    <label class="field-inline" title="Elemente rasten beim Verschieben ein">Raster
+      <select id="ed-grid"><option value="0">aus</option><option value="2">2 px</option><option value="4" selected>4 px</option><option value="8">8 px</option></select>
+    </label>
+    <label class="field-inline" title="Zoom der Fläche">Zoom
+      <select id="ed-zoom"><option value="fit" selected>Einpassen</option><option value="0.5">50 %</option><option value="0.75">75 %</option><option value="1">100 %</option><option value="1.25">125 %</option></select>
+    </label>
+    <label class="switch" title="Elemente zeigen, die wegen einer Bedingung gerade ausgeblendet sind"><input type="checkbox" id="ed-showall"><i></i>Ausgeblendete zeigen</label>
+  </div>
+  <div class="actions">
+    <span id="ed-state" class="state">Gespeichert</span>
+    <button id="ed-preview" class="ghost" title="Den Entwurf auf dem Panel ansehen, ohne zu speichern">Auf dem Panel testen</button>
+    <button id="ed-save" class="primary" title="Speichern (Strg+S)">Speichern</button>
+  </div>
+</header>
+
+<aside id="ed-left">
+  <section class="pal">
+    <h3>Elemente</h3>
+    <input id="ed-pq" type="search" placeholder="Element suchen …" autocomplete="off" spellcheck="false">
+    <div id="ed-palette"></div>
+  </section>
+  <section class="layers">
+    <h3>Ebenen <span class="hint">Seite</span></h3>
+    <div id="ed-tree"></div>
+  </section>
+</aside>
+
+<main id="ed-center">
+  <div id="ed-canvas">
+    <div id="ed-wrap"><div id="stage"></div><div id="ed-ov"></div></div>
+  </div>
+  <section id="ed-bottom">
+    <div class="tabs" id="ed-tabs">
+      <button data-tab="sensors" class="on">Sensoren</button>
+      <button data-tab="formulas">Formeln</button>
+      <button data-tab="pages">Seiten</button>
+      <button data-tab="design">Design</button>
+      <span class="hint" id="ed-bhint"></span>
+      <button id="ed-collapse" class="icon-btn" title="Bereich ein- oder ausklappen"></button>
+    </div>
+    <div id="ed-bbody"></div>
+  </section>
+</main>
+
+<aside id="ed-right"><div id="ed-inspector"></div></aside>
+
+<div id="ed-modal" hidden></div>
+<div id="ed-banner" hidden></div>
+<div id="ed-toast" hidden></div>
+
+<script src="js/core.js"></script>
+<script src="js/widgets.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/editor.js"></script>
+</body>
+</html>

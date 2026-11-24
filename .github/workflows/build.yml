@@ -1,0 +1,47 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Release-Paket bauen
+        shell: pwsh
+        run: ./scripts/release.ps1
+
+      - name: Paket als Artefakt ablegen
+        uses: actions/upload-artifact@v7
+        with:
+          name: sensorium-win-x64
+          path: artifacts/*.zip
+          retention-days: 14
+
+      - name: GitHub-Release anlegen
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $zip = (Get-ChildItem artifacts -Filter *.zip | Select-Object -First 1).FullName
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag $zip --clobber
+          } else {
+            gh release create $tag $zip --title "Sensorium $($tag.TrimStart('v'))" --notes-file artifacts/release-notes.md
+          }

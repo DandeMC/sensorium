@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Sensoren und Zuordnung</title>
+<link rel="stylesheet" href="css/sensors.css">
+</head>
+<body>
+<header>
+  <div class="brand"><span class="logo"></span>Sensoren und Zuordnung</div>
+  <div id="status" class="pills"></div>
+</header>
+<div id="banner" hidden></div>
+<main>
+  <section class="left">
+    <h2>Zuordnungen</h2>
+    <p class="hint">Das Panel nutzt diese Namen statt fester Sensoren. Klicke „Ändern“ und dann rechts auf einen Sensor.</p>
+    <div id="aliases"></div>
+  </section>
+  <section class="right">
+    <div class="tools">
+      <input id="q" type="search" placeholder="Sensoren durchsuchen …" autocomplete="off" spellcheck="false">
+      <div id="chips"></div>
+    </div>
+    <div id="pick" hidden></div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Name</th><th>Typ</th><th class="r">Wert</th><th>ID</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<div id="toast" hidden></div>
+<script src="js/core.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/sensors.js"></script>
+</body>
+</html>
