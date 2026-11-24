@@ -6,6 +6,8 @@
 
 **Sensor-Panel für Windows.** Sensorium zeigt CPU, Grafikkarte, Arbeitsspeicher, Laufwerke, Netzwerk, Lüfter und FPS randlos auf einem zweiten Bildschirm – und auf Wunsch eine zweite Seite mit deinem Zuhause aus Home Assistant. Gedacht als moderner, kostenloser Ersatz für ein AIDA64-SensorPanel.
 
+Sensorium wurde mit [Claude Code](https://claude.com/claude-code) geschrieben, dem KI-Programmierassistenten von Anthropic.
+
 *English summary: [see below](#english-summary).*
 
 ![PC-Seite mit Live-Werten](docs/bilder/pc.png)
@@ -196,3 +198,4 @@ Sensorium ist ein privates Projekt und steht in keiner Verbindung zu FinalWire (
 - **Editor:** design the panel with the mouse (drag and drop, live values, undo, pages, formulas, colours).
 - **Privacy:** no account, no telemetry. The Home Assistant token is stored encrypted with Windows DPAPI.
 - The user interface is in German. Licensed under the MIT license.
+- Sensorium was written with [Claude Code](https://claude.com/claude-code), Anthropic's AI coding assistant.
