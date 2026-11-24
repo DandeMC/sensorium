@@ -562,7 +562,7 @@
               "align": "center",
               "visibleIf": { "sensor": "ha:sensor.batterie_entladeleistung", "gt": 0 }
             },
-            { "type": "stat", "label": "PV jetzt", "sensor": "ha:sensor.pv_leistung", "unit": "W", "color": "#ffd08a", "x": 790, "y": 100, "w": 110, "h": 56 },
+            { "type": "stat", "label": "PV jetzt", "sensor": "ha:sensor.pv_leistung", "unit": "W", "color": "@warn-text", "x": 790, "y": 100, "w": 110, "h": 56 },
             { "type": "stat", "label": "Ins Haus", "sensor": "ha:sensor.pv_ins_haus", "unit": "W", "x": 790, "y": 166, "w": 110, "h": 56 },
             { "type": "stat", "label": "Prognose", "sensor": "ha:sensor.pv_prognose_heute", "unit": "kWh", "decimals": 1, "x": 790, "y": 232, "w": 110, "h": 56 },
             { "type": "box", "x": 28, "y": 334, "w": 870, "h": 1, "fill": "@line" },

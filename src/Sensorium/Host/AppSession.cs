@@ -170,6 +170,79 @@ internal sealed class AppSession : IDisposable
             case "dirty" when window is EditorWindow editor:
                 editor.Dirty = message.TryGetProperty("value", out var dirty) && dirty.ValueKind == JsonValueKind.True;
                 break;
+            case "importProfile" when window is EditorWindow editor:
+                ImportProfile(editor);
+                break;
+            case "exportProfile" when window is EditorWindow editor && Str("json") is { } json:
+                ExportProfile(editor, json, Str("name"));
+                break;
+        }
+    }
+
+    private const long MaxProfileBytes = 2_000_000;
+
+    /// <summary>Datei wählen und dem Editor übergeben. Er zeigt vor dem Übernehmen, was drin steckt.</summary>
+    private static void ImportProfile(EditorWindow editor)
+    {
+        using var dialog = new OpenFileDialog
+        {
+            Title = "Profil importieren",
+            Filter = "Sensorium-Profil (*.json)|*.json|Alle Dateien (*.*)|*.*",
+            CheckFileExists = true,
+            RestoreDirectory = true,
+        };
+        if (dialog.ShowDialog(editor) != DialogResult.OK)
+            return;
+        try
+        {
+            var info = new FileInfo(dialog.FileName);
+            if (info.Length > MaxProfileBytes)
+            {
+                editor.Post(Protocol.Toast("Die Datei ist zu groß für ein Profil."));
+                return;
+            }
+            string json = File.ReadAllText(dialog.FileName);
+            editor.Post(Protocol.ImportedProfile(json, info.Name));
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Profil importieren", ex);
+            editor.Post(Protocol.Toast("Die Datei ließ sich nicht lesen: " + ex.Message));
+        }
+    }
+
+    private static void ExportProfile(EditorWindow editor, string json, string? name)
+    {
+        try
+        {
+            using (JsonDocument.Parse(json)) { } // nur gültiges JSON schreiben
+        }
+        catch (JsonException)
+        {
+            editor.Post(Protocol.Toast("Das Profil ist kein gültiges JSON."));
+            return;
+        }
+        string fileName = string.Concat((name ?? "sensorium-profil.json").Where(c => !Path.GetInvalidFileNameChars().Contains(c)));
+        using var dialog = new SaveFileDialog
+        {
+            Title = "Profil exportieren",
+            Filter = "Sensorium-Profil (*.json)|*.json",
+            FileName = string.IsNullOrWhiteSpace(fileName) ? "sensorium-profil.json" : fileName,
+            OverwritePrompt = true,
+            RestoreDirectory = true,
+        };
+        if (dialog.ShowDialog(editor) != DialogResult.OK)
+            return;
+        try
+        {
+            File.WriteAllText(dialog.FileName, json, new System.Text.UTF8Encoding(false));
+            Log.Info("Profil exportiert: " + dialog.FileName);
+            editor.Post(Protocol.Toast("Exportiert: " + dialog.FileName));
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Profil exportieren", ex);
+            editor.Post(Protocol.Toast("Export fehlgeschlagen: " + ex.Message));
         }
     }
 

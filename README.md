@@ -21,17 +21,32 @@ Sensorium wurde mit [Claude Code](https://claude.com/claude-code) geschrieben, d
 - **Corsair-AIO** (Hydro Platinum, Pro XT, iCUE Elite RGB) wird direkt per USB gelesen, parallel zu iCUE und nur lesend.
 - **Zuhause-Seite** (optional) mit Home Assistant: Wetter, wer zuhause ist, Haustür und Fenster, Energie, Heizung und Geräte, die du per Mausklick schaltest.
 - **Tasmota-Steckdosen** (optional) werden jede Sekunde direkt abgefragt, z. B. für den Verbrauch des ganzen PCs.
-- **Einrichtungsassistent** beim ersten Start – Home Assistant ist freiwillig, ein „Nein“ reicht.
+- **Sieben Looks** per Klick: Aurora, Mitternacht (OLED), Neon, Terminal, Glut, Gold und das helle Polar – oder eigene Farben.
+- **Vorlagen für andere Bildschirme:** Streifen (1920 × 480), Kompakt (1024 × 600) und Hochkant (1080 × 1920).
+- **Einrichtungsassistent** beim ersten Start – Look, passende Vorlage, Sensoren und Home Assistant. Home Assistant ist freiwillig, ein „Nein“ reicht.
 - **Editor:** Panel mit der Maus gestalten – verschieben, Größe ändern, Sensoren hineinziehen, Farben, Formeln, Seiten. Mit Rückgängig, Live-Werten und Probe auf dem Panel.
+- **Profile teilen:** Import und Export als Datei, mit Prüfung vor dem Import.
 - **Mehrere Seiten:** Umschalten per Klick oder Mausrad. Klicks holen das Panel nicht in den Vordergrund, das Spiel behält den Fokus.
-- **Kein Konto, keine Cloud:** Sensorium selbst sendet nichts ins Internet. Es spricht nur mit deinem Home Assistant und deinen Steckdosen, wenn du sie einrichtest.
+- **Kein Konto, keine Cloud:** Sensorium selbst sendet nichts ins Internet. Es spricht nur mit deinem Home Assistant und deinen Steckdosen, wenn du sie einrichtest. Die Anzeige lädt nichts aus dem Netz nach, auch nicht über ein Profil.
+
+## Looks
+
+![Sechs der sieben Looks: Mitternacht, Neon, Terminal, Glut, Gold und Polar](docs/bilder/looks.png)
+
+Ein Look ändert Farben, Hintergrund und Kartenstil, die Anordnung bleibt. Auswählen lässt er sich im Assistenten (Schritt „Look“) oder im Editor im Reiter „Design“. Dort kannst du jede Farbe auch einzeln anpassen.
+
+## Andere Bildschirmformate
+
+![Vorlagen: Streifen, Kompakt und Hochkant](docs/bilder/vorlagen.png)
+
+Das Standard-Layout ist für 1920 × 1080 gebaut. Für schmale Leisten, kleine 7-Zoll-Displays und Monitore im Hochformat gibt es eigene Vorlagen. Hat dein Panel-Bildschirm ein anderes Format, schlägt der Assistent die passende Vorlage vor. Im Editor findest du sie unter „Design“ → „Vorlage laden …“. Andere Größen werden passend skaliert.
 
 ## Voraussetzungen
 
 | | |
 |---|---|
 | **Windows 10 oder 11** (64 Bit) | |
-| **Zweiter Bildschirm** | Das Panel ist für 1920 × 1080 gebaut und wird auf andere Größen skaliert. |
+| **Zweiter Bildschirm** | Vorlagen für 1920 × 1080, 1920 × 480, 1024 × 600 und 1080 × 1920. Andere Größen werden skaliert. |
 | **WebView2-Runtime** | Ist bei Windows 11 dabei, bei Windows 10 meist auch. Sonst: [WebView2 herunterladen](https://developer.microsoft.com/microsoft-edge/webview2/) (Evergreen Bootstrapper). |
 | **Adminrechte** | Viele Hardware-Sensoren lassen sich nur mit Adminrechten lesen. Sensorium fragt beim Start danach. |
 | **PawnIO-Treiber** (empfohlen) | Nötig für CPU-Temperatur, CPU-Takt und -Leistung sowie Lüfter am Mainboard: [pawnio.eu](https://pawnio.eu/). Der Assistent zeigt, ob er fehlt. |
@@ -64,15 +79,18 @@ Rechtsklick auf das Sensorium-Symbol unten rechts → **Beenden**. Danach die ne
 
 ## Einrichtung
 
-Beim ersten Start führt ein Assistent in fünf Schritten durch alles:
+Beim ersten Start führt ein Assistent in sechs Schritten durch alles:
 
 1. **Willkommen** – was Sensorium kann.
 2. **Bildschirm** – auf jedem Monitor erscheint kurz eine große Nummer, du klickst den passenden an.
-3. **Sensoren** – zeigt, ob Adminrechte, PawnIO, RTSS und eine Corsair-AIO erkannt wurden, und hilft beim Nachrüsten.
-4. **Home Assistant** – freiwillig. Bei „Ja“: Adresse und Zugriffstoken eingeben, testen, dann schlägt Sensorium passende Geräte vor (nach Etagen filterbar). Du hakst an, was auf die Seite soll, und siehst sofort eine Vorschau mit Live-Werten.
-5. **Fertig** – Autostart einschalten, fertig.
+3. **Look** – Farben auswählen, mit Live-Vorschau. Passt das Layout nicht zum Bildschirm (z. B. eine schmale Leiste), schlägt der Assistent die passende Vorlage vor.
+4. **Sensoren** – zeigt, ob Adminrechte, PawnIO, RTSS und eine Corsair-AIO erkannt wurden, und hilft beim Nachrüsten.
+5. **Home Assistant** – freiwillig. Bei „Ja“: Adresse und Zugriffstoken eingeben, testen, dann schlägt Sensorium passende Geräte vor (nach Etagen filterbar). Du hakst an, was auf die Seite soll, und siehst sofort eine Vorschau mit Live-Werten.
+6. **Fertig** – Autostart einschalten, fertig.
 
-![Einrichtungsassistent](docs/bilder/einrichtung.png)
+![Einrichtungsassistent: Look wählen](docs/bilder/einrichtung.png)
+
+![Einrichtungsassistent: Seite „Zuhause“ zusammenstellen](docs/bilder/einrichtung-zuhause.png)
 
 Der Assistent lässt sich jederzeit wieder öffnen: Rechtsklick auf das Symbol → **Einrichtung …**
 
@@ -97,9 +115,16 @@ Rechtsklick auf das Symbol → **Panel bearbeiten …**
 - **Fläche** mit Live-Werten: Elemente anklicken, verschieben, an den Anfassern in der Größe ändern. Sie rasten an Kanten, Mitten und am Raster ein (`Alt` = frei, `Umschalt` an einer Ecke = Seitenverhältnis halten).
 - **Elemente** links anklicken oder auf die Fläche bzw. in eine Karte ziehen. **Ebenen** zeigen den Aufbau der Seite.
 - **Eigenschaften** rechts: Position, alle Einstellungen des Elements, Farbregeln, Sichtbarkeit (Bedingungen) und „Erweitert“ (alles als JSON).
-- **Unten:** Sensoren (auch alle Entitäten aus Home Assistant, nach Etage filterbar; auf die Fläche ziehen = neues Element), Formeln (mit „Testen“), Seiten (Umschalter, automatischer Wechsel) und Design (Farben, Größe).
+- **Unten:** Sensoren (auch alle Entitäten aus Home Assistant, nach Etage filterbar; auf die Fläche ziehen = neues Element), Formeln (mit „Testen“), Seiten (Umschalter, automatischer Wechsel) und Design (Looks, Vorlagen, Import und Export, Hintergrund, Kartenstil, einzelne Farben, Größe).
 - **Tasten:** Pfeile, Entf, Strg+D, Strg+C/X/V, Strg+Z/Y, Strg+S, Esc.
 - **Auf dem Panel testen** zeigt den Entwurf auf dem Panel, ohne zu speichern. **Speichern** schreibt dein eigenes Profil nach `%APPDATA%\Sensorium\profiles`; die vorige Fassung landet in `profiles\Sicherungen`.
+
+## Profile teilen
+
+Im Editor unter **Design** → **Exportieren …** speicherst du dein Profil als JSON-Datei, mit **Importieren …** lädst du eins. So lassen sich Layouts weitergeben.
+
+- **Beim Import** zeigt Sensorium vorher, was in der Datei steckt: ein anderes Bildschirmformat, Home-Assistant-Werte, die es bei dir nicht gibt, und Kacheln, die Geräte schalten würden. Schalten ist erst erlaubt, wenn du es ausdrücklich anhakst. Verweise auf Inhalte aus dem Internet werden entfernt. Übernommen wird erst mit **Speichern**, Strg+Z macht den Import rückgängig.
+- **Beim Export** weist Sensorium darauf hin, wenn das Profil Namen aus deinem Home Assistant (z. B. Personen, Räume) oder Adressen von Steckdosen enthält. Zugangsdaten stehen nie in einem Profil.
 
 ## Home Assistant
 
@@ -125,7 +150,8 @@ Verfügbar sind `power`, `today`, `yesterday`, `total`, `voltage`, `current` und
 
 Das Aussehen steht in einem Profil (JSON). Der Editor erledigt das meiste; wer lieber direkt schreibt:
 
-- Ein Profil hat `theme` (Farben, Verläufe), `formulas` und `pages[].widgets`. Jedes Element hat `type`, die Position `x`/`y`/`w`/`h` und je nach Typ weitere Felder. Kinder (`children`) liegen relativ zu ihrer Karte.
+- Ein Profil hat `canvas` (Größe), `theme`, `formulas` und `pages[].widgets`. Jedes Element hat `type`, die Position `x`/`y`/`w`/`h` und je nach Typ weitere Felder. Kinder (`children`) liegen relativ zu ihrer Karte.
+- **Theme:** `colors` (u. a. `bg`, `text`, `muted`, `accent`, `accent2`, `warn`, `crit`, `ok`, `card-top`, `card-bottom`), `gradients`, `fonts`, `background` (`aurora`, `glow`, `horizon`, `grid`, `plain`), `cards` (`glass`, `flat`, `outline`) und `tone` (`dark` oder `light`).
 - **Sensoren** werden über Zuordnungen angesprochen (`cpu.temp`, `gpu.load`, `sys.ram.used`, `drive.C.temp`, `fps.current` …) oder direkt über ihre ID in `{…}`.
 - **Home Assistant:** `ha:sensor.x` (Zustand), `ha:sensor.x#state` (Zustand im Original, z. B. `unavailable`), `ha:sensor.x#changed` (letzte Änderung), `ha:climate.y@current_temperature` (Attribut).
 - **Formeln:** `"formulas": { "pc.wall": { "label": "PC an der Steckdose", "expr": "first({tasmota:192.168.1.50/power}, {ha:sensor.pc_steckdose_leistung})" } }`. Rechnen mit `+ − * /`, Funktionen `avg`, `min`, `max`, `sum`, `list`, `first`, `round`, `abs`, `pos`.
@@ -158,6 +184,7 @@ Ein vollständiges Beispiel mit PC-Seite und Seite „Zuhause“ steht in [`docs
 | Einstellungen, Zuordnungen, eigene Profile, Logs | `%APPDATA%\Sensorium` |
 | WebView2-Daten | `%LOCALAPPDATA%\Sensorium` |
 | Mitgeliefertes Profil | `Profiles\standard.json` im Programmordner |
+| Layout-Vorlagen | `Profiles\vorlagen` im Programmordner |
 
 In `%APPDATA%\Sensorium\settings.json` gibt es ein paar Schalter ohne eigene Oberfläche, z. B. `"corsairUsb": false` (AIO nicht lesen) und `fpsIgnore` (Programme, die keine Spiele sind und deshalb keine FPS zeigen sollen).
 
@@ -194,8 +221,9 @@ Sensorium ist ein privates Projekt und steht in keiner Verbindung zu FinalWire (
 
 - **Install:** download the latest `Sensorium-…-win-x64.zip` from [Releases](https://github.com/DandeMC/sensorium/releases/latest), unblock it (Properties → Unblock), unzip and run `Sensorium.exe`. The app is not code-signed, so SmartScreen may ask (More info → Run anyway). It requests admin rights because many hardware sensors need them. No .NET installation is required.
 - **Recommended:** the [PawnIO](https://pawnio.eu/) driver for CPU temperature, clocks and motherboard fans; RTSS for FPS.
-- **First run:** a setup wizard picks the monitor, checks the sensors and, only if you want, connects Home Assistant and builds a "Zuhause" (home) page from your entities with a live preview.
-- **Editor:** design the panel with the mouse (drag and drop, live values, undo, pages, formulas, colours).
-- **Privacy:** no account, no telemetry. The Home Assistant token is stored encrypted with Windows DPAPI.
+- **First run:** a setup wizard picks the monitor and a look, suggests a layout template if your panel screen is not 16:9, checks the sensors and, only if you want, connects Home Assistant and builds a "Zuhause" (home) page from your entities with a live preview.
+- **Looks and formats:** seven themes (Aurora, Mitternacht for OLED, Neon, Terminal, Glut, Gold and the light Polar) and layout templates for 1920 × 1080, 1920 × 480 bar displays, 1024 × 600 7-inch displays and 1080 × 1920 portrait monitors.
+- **Editor:** design the panel with the mouse (drag and drop, live values, undo, pages, formulas, colours). Profiles can be exported and imported; imports are checked first and may only toggle devices after you allow it.
+- **Privacy:** no account, no telemetry, and the panel never loads content from the internet. The Home Assistant token is stored encrypted with Windows DPAPI.
 - The user interface is in German. Licensed under the MIT license.
 - Sensorium was written with [Claude Code](https://claude.com/claude-code), Anthropic's AI coding assistant.

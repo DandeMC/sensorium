@@ -383,7 +383,7 @@ const Widgets = (() => {
     const knobGroup = s('g', { class: 'g-knob' });
     knobGroup.style.transformOrigin = `${cx}px ${cy}px`;
     const start = pt(135, r);
-    const knob = s('circle', { cx: start[0].toFixed(1), cy: start[1].toFixed(1), r: 6, fill: '#fff' });
+    const knob = s('circle', { cx: start[0].toFixed(1), cy: start[1].toFixed(1), r: 6, fill: Sx.colorValue('@text') });
     knobGroup.append(knob);
     svg.append(knobGroup);
 
@@ -546,13 +546,14 @@ const Widgets = (() => {
     const used = h('span', { class: 'd-used' });
     const read = h('b', { class: 'n' }), write = h('b', { class: 'n' });
     const letterEl = h('span', { class: 'n d-letter', text: (want.startsWith('#') ? '–' : L) + ':' });
+    // "io": false blendet Lesen/Schreiben aus (für schmale Karten).
+    const io = c.io === false ? null : h('span', { class: 'd-io' }, icon('down', 14, 'color:var(--accent)'), h('span', { text: 'Lesen' }), read,
+      icon('up', 14, 'color:var(--up);margin-left:22px'), h('span', { text: 'Schreiben' }), write);
     el.append(
       h('div', { class: 'd-row1' }, letterEl, sub, temp,
         h('span', { class: 'd-pctwrap' }, pct, h('span', { class: 'u', text: '%', style: 'font-size:18px;margin-left:3px' }))),
       h('div', { class: 'bar d-bar' }, fill),
-      h('div', { class: 'd-row3' }, used,
-        h('span', { class: 'd-io' }, icon('down', 14, 'color:var(--accent)'), h('span', { text: 'Lesen' }), read,
-          icon('up', 14, 'color:var(--up);margin-left:22px'), h('span', { text: 'Schreiben' }), write)));
+      h('div', { class: 'd-row3' }, used, io));
     const tempRules = c.tempRules || [{ from: 50, color: '@warn' }, { from: 65, color: '@crit' }];
     return {
       update() {
@@ -713,7 +714,7 @@ const Widgets = (() => {
         if (condition !== shown) {
           shown = condition;
           ico.textContent = '';
-          const tint = condition === 'sunny' ? '#ffc861' : condition === 'clear-night' ? '#c9d6ff' : '#a9bfd4';
+          const tint = condition === 'sunny' ? 'color-mix(in srgb, var(--warn) 80%, var(--text))' : condition === 'clear-night' ? 'color-mix(in srgb, var(--up) 45%, var(--text))' : 'color-mix(in srgb, var(--muted) 60%, var(--text))';
           const px = c.iconSize || 50;
           ico.append(icon(WX[condition] || 'cloud', px, `color:${tint};stroke-width:1.5;width:${px}px;height:${px}px`));
         }
@@ -756,7 +757,7 @@ const Widgets = (() => {
         for (const { d, f } of days) {
           el.append(h('div', { class: 'fc-day' },
             h('div', { class: 'lbl', text: d.toLocaleDateString(Sx.st.locale, { weekday: 'short' }).replace('.', '') }),
-            icon(WX[f.condition] || 'cloud', 24, 'color:#a9bfd4;stroke-width:1.5;display:block;margin:9px auto 5px;width:24px;height:24px'),
+            icon(WX[f.condition] || 'cloud', 24, 'color:color-mix(in srgb, var(--muted) 60%, var(--text));stroke-width:1.5;display:block;margin:9px auto 5px;width:24px;height:24px'),
             h('div', { class: 'fc-t' },
               h('span', { class: 'n', text: Sx.fmt(f.temperature, 0) + '°' }),
               h('span', { class: 'fc-lo', text: typeof f.templow === 'number' ? ' / ' + Sx.fmt(f.templow, 0) + '°' : '' }))));

@@ -150,3 +150,18 @@ details.sec[open] summary::before { transform: rotate(90deg); }
 
 #su-toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 20; padding: 10px 18px; border-radius: 10px; background: #111a26; border: 1px solid var(--s-line2); box-shadow: 0 20px 50px -10px rgba(0,0,0,.8); }
 #su-toast[hidden] { display: none; }
+
+/* Look (Theme-Vorlagen) und Formatvorschlag */
+.looks2 { display: flex; flex-direction: column; gap: 8px; }
+.look2 { display: flex; gap: 14px; align-items: center; text-align: left; padding: 8px 14px 8px 8px; border-radius: 14px; border: 1.5px solid var(--s-line); background: rgba(255,255,255,.02); transition: border-color .2s, background .2s; }
+.look2:hover { border-color: var(--s-line2); background: rgba(255,255,255,.04); }
+.look2.on { border-color: rgba(56,210,239,.65); background: rgba(56,210,239,.06); }
+.look2 .sw { width: 112px; height: 64px; flex: none; }
+.look2 h3 { font-size: 14.5px; margin-bottom: 2px; }
+.look2 p { color: var(--s-muted); font-size: 12.5px; line-height: 1.35; }
+.look2 .tick { margin-left: auto; padding-left: 8px; color: var(--s-acc); font-weight: 700; visibility: hidden; }
+.look2.on .tick { visibility: visible; }
+.tplsug { display: flex; gap: 18px; align-items: center; padding: 14px 16px; margin-bottom: 22px; border-radius: 16px; border: 1.5px solid rgba(56,210,239,.45); background: linear-gradient(180deg, rgba(25,35,55,.7), rgba(12,18,28,.7)); max-width: 900px; }
+.tplsug img { width: 220px; max-height: 124px; object-fit: contain; border-radius: 8px; background: #03060b; flex: none; }
+.tplsug h3 { font-size: 15.5px; margin-bottom: 4px; }
+.tplsug p { color: var(--s-muted); font-size: 13px; margin-bottom: 12px; }

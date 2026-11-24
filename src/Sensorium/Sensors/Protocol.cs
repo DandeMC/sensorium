@@ -101,6 +101,14 @@ public static class Protocol
         w.WriteString("path", path);
     });
 
+    /// <summary>Inhalt einer Profil-Datei, die der Editor importieren soll (er prüft sie und fragt nach).</summary>
+    public static string ImportedProfile(string json, string name) => Write(w =>
+    {
+        w.WriteString("type", "importedProfile");
+        w.WriteString("json", json);
+        w.WriteString("name", name);
+    });
+
     public static string FormulaResult(string expr, object? value, string? error) => Write(w =>
     {
         w.WriteString("type", "formulaResult");

@@ -4,10 +4,6 @@
   const stage = document.getElementById('stage');
   const overlay = document.getElementById('overlay');
   const errorBox = document.getElementById('error');
-  const DEFAULT_GRADIENTS = {
-    accent: ['#22c3ec', '#6d8cff'], warn: ['#ffd060', '#ff8a3d'], crit: ['#ff8a96', '#ff3d6e'],
-    ok: ['#5ff0b0', '#2bbf8a'], up: ['#b9a6ff', '#8a6cff'],
-  };
   const PAGE_KEY = 'sensorium.page';
   let profile = null;
   let pages = [];
@@ -15,16 +11,6 @@
   let size = { w: 1920, h: 1080 };
   let notice = null, toastBox = null, toastTimer = 0, lastWheel = 0;
   const ruleState = new Map();
-
-  function applyTheme(theme) {
-    const t = theme || {};
-    const root = document.documentElement.style;
-    for (const [name, value] of Object.entries(t.colors || {})) root.setProperty('--' + name, value);
-    if (t.fonts && t.fonts.num) root.setProperty('--num', t.fonts.num);
-    if (t.fonts && t.fonts.ui) root.setProperty('--ui', t.fonts.ui);
-    Sx.setTheme(Object.assign({}, t, { gradients: Object.assign({}, DEFAULT_GRADIENTS, t.gradients || {}) }));
-    document.body.dataset.bg = t.background || 'aurora';
-  }
 
   // Zuletzt gezeigte Seite merken (überlebt einen Neuaufbau der Anzeige).
   function loadPage() { try { return localStorage.getItem(PAGE_KEY); } catch { return null; } }
@@ -36,7 +22,7 @@
     profile = p;
     pages = Array.isArray(p.pages) && p.pages.length ? p.pages : [p];
     size = { w: (p.canvas && p.canvas.width) || 1920, h: (p.canvas && p.canvas.height) || 1080 };
-    applyTheme(p.theme);
+    Sx.applyTheme(p.theme);
     ruleState.clear();
     let index = pageIndex;
     if (first) {

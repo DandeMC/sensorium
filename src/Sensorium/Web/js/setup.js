@@ -10,6 +10,7 @@
   const STEPS = [
     { id: 'welcome', title: 'Willkommen', sub: 'Worum es geht' },
     { id: 'screen', title: 'Bildschirm', sub: 'Wo das Panel läuft' },
+    { id: 'look', title: 'Look', sub: 'Farben und Format' },
     { id: 'sensors', title: 'Sensoren', sub: 'Was gemessen wird' },
     { id: 'ha', title: 'Home Assistant', sub: 'Freiwillig' },
     { id: 'done', title: 'Fertig', sub: 'Autostart und Editor' },
@@ -18,6 +19,7 @@
     step: 0, state: null, profile: null,
     ha: 'ask', form: { url: '', token: '' }, test: null, testing: false,
     dir: null, dirById: new Map(), dirError: null, sel: null, saving: false, savedPage: null, haUsed: null,
+    templates: null, tplApplied: null, pending: null,
   };
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
@@ -78,7 +80,7 @@
     view.textContent = '';
     const box = h('div', { class: 'anim' });
     view.append(box);
-    footer = ({ welcome, screen, sensors, ha, done })[STEPS[su.step].id](box) || {};
+    footer = ({ welcome, screen, look, sensors, ha, done })[STEPS[su.step].id](box) || {};
     const back = $('#su-back'), next = $('#su-next'), skip = $('#su-skip');
     back.style.visibility = footer.hideBack || su.step === 0 ? 'hidden' : '';
     next.textContent = footer.nextLabel || 'Weiter';
@@ -142,7 +144,93 @@
     return {};
   }
 
-  // ---------------------------------------------------------------- 3. Sensoren
+  // ---------------------------------------------------------------- 3. Look (Theme) und Format (Vorlage)
+  const canvasOf = p => ({ w: (p && p.canvas && p.canvas.width) || 1920, h: (p && p.canvas && p.canvas.height) || 1080 });
+  const sizeText = p => { const c = canvasOf(p); return `${c.w} × ${c.h}`; };
+  function selectedScreen() { const st = su.state; return (st && (st.screens || []).find(x => x.selected)) || null; }
+  /** Passt eine Layout-Vorlage deutlich besser zum Panel-Bildschirm als das jetzige Layout? */
+  function suggestTemplate() {
+    const scr = selectedScreen();
+    if (!scr || !Array.isArray(su.templates) || !su.profile) return null;
+    const score = (w, h) => Math.abs(Math.log((scr.w / scr.h) / (w / h))) + 0.5 * Math.abs(Math.log(scr.w / w));
+    let best = null, bestScore = Infinity;
+    for (const t of su.templates) {
+      const m = /(\d+)\s*×\s*(\d+)/.exec(t.format || '');
+      if (!m) continue;
+      const v = score(+m[1], +m[2]);
+      if (v < bestScore) { bestScore = v; best = Object.assign({ w: +m[1], h: +m[2] }, t); }
+    }
+    const cur = canvasOf(su.profile);
+    if (!best || (best.w === cur.w && best.h === cur.h) || score(cur.w, cur.h) - bestScore < 0.15) return null;
+    return Object.assign(best, { screen: scr });
+  }
+  async function applyTemplate(t) {
+    let tpl;
+    try { tpl = await (await fetch('../Profiles/vorlagen/' + t.file, { cache: 'no-store' })).json(); }
+    catch { toast('Die Vorlage ließ sich nicht laden.'); return; }
+    const cur = su.profile || {};
+    const same = sizeText(tpl) === sizeText(cur);
+    const ids = new Set((tpl.pages || []).map(p => p.id));
+    const keep = same ? (cur.pages || []).filter(p => !ids.has(p.id)) : [];
+    const doc = JSON.parse(JSON.stringify(tpl));
+    doc.name = cur.name || tpl.name;
+    doc.theme = JSON.parse(JSON.stringify(cur.theme || tpl.theme || {}));
+    doc.formulas = Object.assign({}, cur.formulas || {}, tpl.formulas || {});
+    doc.pages = [...(tpl.pages || []), ...keep];
+    delete doc.description;
+    su.profile = doc;
+    su.tplApplied = t.name;
+    saveNow('template');
+    render();
+    toast(`Vorlage „${t.name}“ übernommen – das Panel zeigt sie gleich.`);
+  }
+  let lookTimer = 0;
+  function chooseLook(id) {
+    if (!su.profile || !Themes.apply(su.profile, id)) return;
+    render();
+    clearTimeout(lookTimer);
+    lookTimer = setTimeout(() => saveNow('look'), 350);
+  }
+  /** Speichert das Profil sofort (mit Sicherung der vorigen Fassung); das Panel zeigt die Änderung gleich. */
+  function saveNow(kind) {
+    su.pending = kind;
+    send({ type: 'saveProfile', json: Sx.toJson(su.profile) + '\n' });
+  }
+  function look(box) {
+    box.append(h('h1', { class: 'su', text: 'Wie soll dein Panel aussehen?' }),
+      h('p', { class: 'lead', text: 'Such dir einen Look aus. Er ändert Farben und Hintergrund, die Anordnung bleibt. Das Panel übernimmt die Wahl sofort, im Editor lässt sich später alles feiner einstellen.' }));
+    if (!su.profile) { box.append(h('p', { class: 'note2', text: 'Lade das Profil …' })); return {}; }
+    const sug = suggestTemplate();
+    if (sug) {
+      const others = (su.profile.pages || []).length > 1;
+      box.append(h('div', { class: 'tplsug' },
+        h('img', { src: '../Profiles/vorlagen/' + sug.image, alt: '' }),
+        h('div', null,
+          h('h3', { text: `Passende Vorlage für deinen Bildschirm: ${sug.name}` }),
+          h('p', { text: `Dein Panel-Bildschirm hat ${sug.screen.w} × ${sug.screen.h}. Das jetzige Layout ist für ${sizeText(su.profile)} gebaut und würde nur verkleinert. Die Vorlage „${sug.name}“ (${sug.format}) ist dafür gemacht.` +
+            (others ? ' Seiten in anderem Format (z. B. „Zuhause“) fallen dabei weg; die bisherige Fassung bleibt als Sicherung.' : '') }),
+          h('button', { class: 'primary small', text: 'Vorlage übernehmen', onclick: () => applyTemplate(sug) }))));
+    } else if (su.tplApplied) {
+      box.append(h('p', { class: 'result ok', style: 'margin:-8px 0 18px', text: `Vorlage „${su.tplApplied}“ (${sizeText(su.profile)}) ist übernommen.` }));
+    }
+    const current = Themes.match(su.profile.theme);
+    const list = h('div', { class: 'looks2' });
+    for (const p of Themes.list) {
+      list.append(h('button', { class: 'look2' + (p.id === current ? ' on' : ''), onclick: () => chooseLook(p.id) },
+        h('div', { class: 'sw' }, Themes.swatch(p.id)),
+        h('div', null, h('h3', { text: p.name }), h('p', { text: p.text })),
+        h('span', { class: 'tick', text: '✓' })));
+    }
+    const right = h('div', { class: 'preview' });
+    box.append(h('div', { class: 'build' }, h('div', { class: 'bcol' }, list), right));
+    right.append(h('div', { class: 'pv-head' }, h('span', { class: 'dot2' }), 'Vorschau mit Live-Werten'));
+    const pv = h('div', { class: 'pv-wrap' }, h('div', { id: 'stage' }));
+    right.append(pv, h('p', { class: 'note2', style: 'margin-top:10px', text: current ? 'Die Vorschau zeigt die erste Seite deines Panels.' : 'Gerade sind eigene Farben eingestellt. Ein Klick auf einen Look ersetzt sie.' }));
+    requestAnimationFrame(() => renderStage(pv, ((su.profile.pages || [])[0] || {}).widgets || []));
+    return {};
+  }
+
+  // ---------------------------------------------------------------- 4. Sensoren
   function sensors(box) {
     box.append(h('h1', { class: 'su', text: 'Was Sensorium messen kann' }),
       h('p', { class: 'lead', text: 'Hier siehst du, was schon klappt. Grün ist bereit, Gelb lässt sich mit einem Klick beheben. Nichts davon ist Pflicht.' }));
@@ -177,7 +265,7 @@
     }
   }
 
-  // ---------------------------------------------------------------- 4. Home Assistant
+  // ---------------------------------------------------------------- 5. Home Assistant
   function ha(box) {
     const st = su.state || { ha: {} };
     if (su.ha === 'ask') {
@@ -305,6 +393,12 @@
   }
 
   function haBuild(box) {
+    const cv = canvasOf(su.profile);
+    if (cv.w !== 1920 || cv.h !== 1080) {
+      box.append(h('h1', { class: 'su', text: 'Home Assistant ist verbunden' }),
+        h('p', { class: 'lead', text: `Die automatische Seite „Zuhause“ gibt es bisher nur im Format 1920 × 1080, dein Panel hat ${cv.w} × ${cv.h}. Im Editor findest du unter „Sensoren“ alle Geräte aus Home Assistant und ziehst sie einfach auf eine Seite.` }));
+      return { onBack: () => { su.ha = 'ask'; render(); } };
+    }
     box.append(h('h1', { class: 'su', text: 'Seite „Zuhause“ zusammenstellen' }),
       h('p', { class: 'lead', text: 'Sensorium hat Vorschläge aus deinem Home Assistant gemacht. Hake an, was auf die Seite soll – rechts siehst du sofort, wie es aussieht.' }));
     if (su.dirError) {
@@ -558,23 +652,23 @@
 
   function renderPreview(wrap) {
     if (!wrap || !su.sel) return;
+    renderStage(wrap, generate().page.widgets, 'Noch nichts ausgewählt');
+  }
+  /** Zeigt Elemente verkleinert in der Vorschau, mit dem Theme des Profils. */
+  function renderStage(wrap, widgets, emptyText) {
+    if (!wrap) return;
     const stage = wrap.querySelector('#stage');
-    const t = (su.profile && su.profile.theme) || {};
-    const root = document.documentElement.style;
-    for (const [k, v] of Object.entries(t.colors || {})) root.setProperty('--' + k, v);
-    Sx.setTheme(Object.assign({}, t, { gradients: Object.assign({ accent: ['#22c3ec', '#6d8cff'], warn: ['#ffd060', '#ff8a3d'], crit: ['#ff8a96', '#ff3d6e'], ok: ['#5ff0b0', '#2bbf8a'], up: ['#b9a6ff', '#8a6cff'] }, t.gradients || {}) }));
-    document.body.dataset.bg = t.background || 'aurora';
+    Sx.applyTheme(su.profile && su.profile.theme);
     const W = (su.profile && su.profile.canvas && su.profile.canvas.width) || 1920, H = (su.profile && su.profile.canvas && su.profile.canvas.height) || 1080;
     const scale = (wrap.clientWidth || 640) / W;
     wrap.style.height = Math.round(H * scale) + 'px';
     stage.style.width = W + 'px';
     stage.style.height = H + 'px';
     stage.style.transform = `scale(${scale})`;
-    const { page } = generate();
     Widgets.reset();
     stage.textContent = '';
-    for (const w of page.widgets) Widgets.mount(w, stage);
-    if (!page.widgets.length) stage.append(h('div', { style: 'position:absolute;inset:0;display:grid;place-items:center;color:#56657a;font-size:40px', text: 'Noch nichts ausgewählt' }));
+    for (const w of widgets) Widgets.mount(w, stage);
+    if (!widgets.length && emptyText) stage.append(h('div', { style: 'position:absolute;inset:0;display:grid;place-items:center;color:#56657a;font-size:40px', text: emptyText }));
     Widgets.update();
   }
 
@@ -591,11 +685,12 @@
     profile.formulas = Object.assign({}, profile.formulas || {}, formulas);
     su.savedPage = page.name;
     su.saving = true;
+    su.pending = 'page';
     render();
-    send({ type: 'saveProfile', json: JSON.stringify(profile, null, 2) + '\n' });
+    send({ type: 'saveProfile', json: Sx.toJson(profile) + '\n' });
   }
 
-  // ---------------------------------------------------------------- 5. Fertig
+  // ---------------------------------------------------------------- 6. Fertig
   function done(box) {
     const st = su.state || { ha: {} };
     const scr = (st.screens || []).find(s => s.selected);
@@ -604,6 +699,7 @@
       h('p', { class: 'lead', text: 'Das Panel läuft. Hier noch einmal alles im Überblick.' }),
       h('div', { class: 'summary' },
         row('ok', 'Bildschirm', scr ? `Bildschirm ${scr.nr} · ${scr.w} × ${scr.h}` : 'gewählt'),
+        row('ok', 'Look', [((Themes.byId.get(Themes.match(su.profile && su.profile.theme)) || {}).name || 'eigene Farben'), su.tplApplied ? `Vorlage „${su.tplApplied}“` : null].filter(Boolean).join(' · ')),
         row(st.elevated && st.pawnio ? 'ok' : 'warn', 'Sensoren', [st.elevated ? 'Adminrechte' : 'ohne Adminrechte', st.pawnio ? 'PawnIO installiert' : 'PawnIO fehlt', st.rtss ? 'FPS über RTSS' : null].filter(Boolean).join(' · ')),
         row(st.ha && st.ha.url && st.ha.hasToken ? 'ok' : 'info', 'Home Assistant', st.ha && st.ha.url && st.ha.hasToken ? `verbunden${su.savedPage ? ` · Seite „${su.savedPage}“ angelegt` : ''}` : 'nicht genutzt')));
     const auto = h('input', { type: 'checkbox' });
@@ -621,8 +717,13 @@
   }
 
   // ---------------------------------------------------------------- Nachrichten
-  Sx.on('setupState', m => { su.state = m; if (['screen', 'sensors', 'done'].includes(STEPS[su.step].id) || !su.state.version) render(); else renderRail(); });
-  Sx.on('profile', m => { if (m.profile) su.profile = m.profile; });
+  Sx.on('setupState', m => { su.state = m; if (['screen', 'look', 'sensors', 'done'].includes(STEPS[su.step].id) || !su.state.version) render(); else renderRail(); });
+  Sx.on('profile', m => {
+    if (!m.profile) return;
+    const first = !su.profile;
+    su.profile = m.profile;
+    if (first && STEPS[su.step].id === 'look') render();
+  });
   Sx.on('haTestResult', m => { su.testing = false; su.test = { ok: !!m.ok, version: m.version, error: m.error || 'Keine Verbindung.' }; if (su.ha === 'form') render(); });
   Sx.on('haDirectory', m => {
     if (m.error) { su.dirError = m.error; su.dir = null; }
@@ -633,7 +734,9 @@
     if (su.ha === 'build') { render(); if (su.dir) changed(false); }
   });
   Sx.on('saved', () => {
-    if (!su.saving) return;
+    const what = su.pending;
+    su.pending = null;
+    if (what !== 'page' || !su.saving) return;
     su.saving = false;
     su.ha = 'saved';
     send({ type: 'setupState' });
@@ -661,7 +764,7 @@
     const reply = m => setTimeout(() => Sx.emit(m), 250);
     switch (msg.type) {
       case 'setupState':
-        reply({ type: 'setupState', version: '0.1.0', elevated: true, pawnio: false, rtss: true, cooler: null, autostart: false, canAutostart: true,
+        reply({ type: 'setupState', version: '0.2.0', elevated: true, pawnio: false, rtss: true, cooler: null, autostart: false, canAutostart: true,
           screens: [{ nr: 1, id: 'A', name: 'DISPLAY1', x: 0, y: 0, w: 2560, h: 1440, primary: true, selected: false }, { nr: 2, id: 'B', name: 'DISPLAY2', x: 2560, y: 360, w: 1920, h: 1080, primary: false, selected: true }],
           ha: { url: null, hasToken: false, connected: false, status: 'nicht eingerichtet' } });
         break;
@@ -701,8 +804,10 @@
   render();
   if (Demo.active) Demo.start();
   if (!Sx.isHost) {
-    fetch('../Profiles/standard.json').then(r => r.json()).then(p => { su.profile = p; }).catch(() => { /* egal */ });
+    fetch('../Profiles/standard.json').then(r => r.json()).then(p => { if (!su.profile) Sx.emit({ type: 'profile', profile: p }); }).catch(() => { /* egal */ });
   }
+  fetch('../Profiles/vorlagen/index.json', { cache: 'no-store' }).then(r => r.json())
+    .then(list => { su.templates = list; if (STEPS[su.step].id === 'look') render(); }).catch(() => { /* ohne Vorlagen */ });
   Sx.post({ type: 'ready', page: 'setup' });
   send({ type: 'setupState' });
   setInterval(() => Sx.post({ type: 'heartbeat' }), 5000);

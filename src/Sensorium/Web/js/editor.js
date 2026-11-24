@@ -155,7 +155,7 @@
     ring: [['sensor', 'Wert', 'sensor'], ['label', 'Beschriftung', 'text'], ['unit', 'Einheit', 'text'], ['max', 'Maximum', 'numOrSensor'], ['decimals', 'Nachkommastellen', 'num'], ['color', 'Farbe', 'color']],
     bar: [['sensor', 'Wert', 'sensor'], ['max', 'Maximum', 'numOrSensor'], ['marker', 'Markierung bei', 'numOrSensor'], ['color', 'Farbe', 'color'], ['rules', 'Farbregeln', 'rules']],
     threads: [['sensor', 'Liste der Werte', 'sensor'], ['warnAt', 'Warnfarbe ab %', 'num']],
-    drive: [['letter', 'Laufwerksbuchstabe', 'text'], ['sub', 'Untertitel', 'tpl']],
+    drive: [['letter', 'Laufwerksbuchstabe', 'text'], ['sub', 'Untertitel', 'tpl'], ['io', 'Lesen und Schreiben zeigen', 'bool', true]],
     fanlist: [['columns', 'Spalten', 'num'], ['max', 'höchstens', 'num'], ['hideZero', 'stehende Lüfter ausblenden', 'bool'], ['maxRpm', 'RPM für vollen Balken', 'num'], ['temps', 'Kühlmittel zeigen', 'bool', true]],
     status: [['checks', 'Prüfungen (JSON)', 'json'], ['okText', 'Text, wenn alles gut', 'text'], ['activeIf', 'Aktiv, wenn (JSON)', 'json'], ['activeText', 'Text, wenn aktiv', 'text'], ['align', 'Ausrichtung', 'select', ALIGN2]],
     weather: [['entity', 'Wetter', 'entity', ['weather']], ['size', 'Schriftgröße', 'num'], ['iconSize', 'Symbolgröße', 'num']],
@@ -296,26 +296,7 @@
   }
 
   /** JSON wie von Hand geschrieben: kurze Objekte (ein Element) in einer Zeile. */
-  function toJson(v, ind = '') {
-    const inner = ind + '  ';
-    const flatArray = a => a.every(x => x === null || typeof x !== 'object');
-    if (Array.isArray(v)) {
-      if (!v.length) return '[]';
-      if (flatArray(v)) return '[' + v.map(x => JSON.stringify(x)).join(', ') + ']';
-      return '[\n' + v.map(x => inner + toJson(x, inner)).join(',\n') + '\n' + ind + ']';
-    }
-    if (v && typeof v === 'object') {
-      const keys = Object.keys(v).filter(k => v[k] !== undefined);
-      if (!keys.length) return '{}';
-      const flat = keys.every(k => v[k] === null || typeof v[k] !== 'object' || (Array.isArray(v[k]) && flatArray(v[k])));
-      if (flat) {
-        const line = '{ ' + keys.map(k => JSON.stringify(k) + ': ' + toJson(v[k], inner)).join(', ') + ' }';
-        if (line.length <= 180) return line;
-      }
-      return '{\n' + keys.map(k => inner + JSON.stringify(k) + ': ' + toJson(v[k], inner)).join(',\n') + '\n' + ind + '}';
-    }
-    return JSON.stringify(v);
-  }
+  const toJson = v => Sx.toJson(v);
   function save() {
     if (!Sx.isHost) { toast('Speichern geht nur im Sensorium-Programm.'); return; }
     Sx.post({ type: 'saveProfile', json: toJson(ed.doc) + '\n' });
@@ -332,16 +313,7 @@
   }
 
   // ---------------------------------------------------------------- Theme
-  const DEFAULT_GRADIENTS = { accent: ['#22c3ec', '#6d8cff'], warn: ['#ffd060', '#ff8a3d'], crit: ['#ff8a96', '#ff3d6e'], ok: ['#5ff0b0', '#2bbf8a'], up: ['#b9a6ff', '#8a6cff'] };
-  function applyTheme() {
-    const t = ed.doc.theme || {};
-    const root = document.documentElement.style;
-    for (const [name, value] of Object.entries(t.colors || {})) root.setProperty('--' + name, value);
-    if (t.fonts && t.fonts.num) root.setProperty('--num', t.fonts.num);
-    if (t.fonts && t.fonts.ui) root.setProperty('--ui', t.fonts.ui);
-    Sx.setTheme(Object.assign({}, t, { gradients: Object.assign({}, DEFAULT_GRADIENTS, t.gradients || {}) }));
-    document.body.dataset.bg = t.background || 'aurora';
-  }
+  function applyTheme() { Sx.applyTheme(ed.doc.theme); }
 
   // ---------------------------------------------------------------- Fläche
   function renderAll() {
@@ -938,7 +910,7 @@
   }
   function redrawLists() { for (const l of [...ed.lists]) { try { l.draw(); } catch { ed.lists.delete(l); } } }
 
-  function openModal(title, build, onClose) {
+  function openModal(title, build, onClose, cls) {
     const m = $('#ed-modal');
     m.textContent = '';
     m.hidden = false;
@@ -956,7 +928,7 @@
     const esc = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
     addEventListener('keydown', esc, true);
     const body = h('div', { class: 'dbody' }), foot = h('footer');
-    m.append(h('div', { class: 'dlg' }, h('header', null, h('h2', { text: title }), h('button', { class: 'icon-btn x', html: svg('close'), title: 'Schließen', onclick: close })), body, foot));
+    m.append(h('div', { class: 'dlg' + (cls ? ' ' + cls : '') }, h('header', null, h('h2', { text: title }), h('button', { class: 'icon-btn x', html: svg('close'), title: 'Schließen', onclick: close })), body, foot));
     m.onmousedown = e => { if (e.target === m) close(); };
     build(body, foot, close);
     return close;
@@ -1458,7 +1430,28 @@
   function renderDesign(body) {
     const t = ed.doc.theme || (ed.doc.theme = {});
     const colors = t.colors || (t.colors = {});
-    const NAMES = { bg: 'Hintergrund', text: 'Text', muted: 'Gedämpft', dim: 'Dunkel', line: 'Linien', track: 'Balken-Hintergrund', accent: 'Akzent', accent2: 'Akzent 2', up: 'Violett', warn: 'Warnung', crit: 'Kritisch', ok: 'Grün' };
+    // Fertige Looks: ein Klick tauscht Farben, Hintergrund und Kartenstil, die Anordnung bleibt.
+    const current = Themes.match(t);
+    const looks = h('div', { class: 'looks' });
+    for (const p of Themes.list) {
+      looks.append(h('button', {
+        class: 'look' + (p.id === current ? ' on' : ''), title: p.text,
+        onclick: () => { Themes.apply(ed.doc, p.id); applyTheme(); commit({ bottom: true }); toast(`Look „${p.name}“ übernommen. Rückgängig mit Strg+Z.`); },
+      }, h('div', { class: 'look-sw' }, Themes.swatch(p.id)), h('div', { class: 'look-nm', text: p.name })));
+    }
+    body.append(h('div', { class: 'card-list', style: 'max-width:none;margin-bottom:14px' },
+      h('div', { class: 'ecard', style: 'align-items:flex-start' },
+        h('div', { style: 'width:110px;color:var(--e-muted);padding-top:6px', text: 'Look' }), looks),
+      h('div', { class: 'ecard' },
+        h('div', { style: 'width:110px;color:var(--e-muted)', text: 'Profil' }),
+        h('button', { class: 'mini', text: 'Vorlage laden …', onclick: openTemplates }),
+        h('button', { class: 'mini', text: 'Importieren …', onclick: importProfile }),
+        h('button', { class: 'mini', text: 'Exportieren …', onclick: exportProfile }),
+        h('div', { class: 'note', style: 'flex:1;min-width:200px', text: 'Vorlagen für andere Bildschirmformate. Import und Export als JSON-Datei, z. B. zum Teilen.' }))));
+    const NAMES = {
+      bg: 'Hintergrund', text: 'Text', muted: 'Gedämpft', dim: 'Dunkel', line: 'Linien', track: 'Balken-Hintergrund', accent: 'Akzent', accent2: 'Akzent 2',
+      up: 'Violett', warn: 'Warnung', crit: 'Kritisch', ok: 'Grün', 'card-top': 'Karte oben', 'card-bottom': 'Karte unten',
+    };
     const grid = h('div', { class: 'form-grid', style: 'grid-template-columns:repeat(auto-fill, minmax(250px, 1fr))' });
     for (const [key, label] of Object.entries(NAMES)) {
       const v = colors[key] || getComputedStyle(document.documentElement).getPropertyValue('--' + key).trim();
@@ -1472,10 +1465,16 @@
       pick.addEventListener('change', () => setColor(pick.value, false));
       grid.append(h('div', { class: 'ecard', style: 'flex-wrap:nowrap' }, h('div', { style: 'width:110px;color:var(--e-muted)', text: label }), sw, txt, pick));
     }
-    const bg = h('select');
-    for (const [v, l] of [['aurora', 'Farbverlauf (Aurora)'], ['plain', 'einfarbig']]) bg.append(h('option', { value: v, text: l }));
-    bg.value = t.background || 'aurora';
-    bg.addEventListener('change', () => { t.background = bg.value; applyTheme(); commit({ keepInspector: true }); });
+    const choice = (key, options, fallback) => {
+      const sel = h('select');
+      for (const [v, l] of options) sel.append(h('option', { value: v, text: l }));
+      sel.value = t[key] || fallback;
+      sel.addEventListener('change', () => { if (sel.value === fallback) delete t[key]; else t[key] = sel.value; applyTheme(); commit({ keepInspector: true, bottom: true }); });
+      return sel;
+    };
+    const bg = choice('background', [['aurora', 'Farbverlauf (Aurora)'], ['glow', 'Lichtschein'], ['horizon', 'Horizont'], ['grid', 'Raster'], ['plain', 'einfarbig']], 'aurora');
+    const cards = choice('cards', [['glass', 'Glas'], ['flat', 'flach'], ['outline', 'nur Rahmen']], 'glass');
+    const tone = choice('tone', [['dark', 'dunkel'], ['light', 'hell']], 'dark');
     const sizeIn = (key, label) => {
       const el = h('input', { type: 'text', value: ed.doc.canvas[key] ?? '', style: 'width:90px' });
       el.addEventListener('change', () => { const n = parseNum(el.value); if (!n || n < 200) { el.classList.add('bad'); return; } el.classList.remove('bad'); ed.doc.canvas[key] = Math.round(n); commit({ keepInspector: true }); });
@@ -1488,10 +1487,154 @@
       return h('label', null, label, el);
     };
     body.append(h('div', { class: 'card-list', style: 'max-width:none' },
-      h('div', { class: 'ecard' }, h('label', null, 'Hintergrund', bg), sizeIn('width', 'Breite (px)'), sizeIn('height', 'Höhe (px)'), fontIn('num', 'Schrift für Zahlen'), fontIn('ui', 'Schrift für Text'),
-        h('div', { class: 'note', style: 'flex:1;min-width:200px', text: 'Die Größe sollte der Auflösung des Panel-Monitors entsprechen (ARZOPA: 1920 × 1080).' })),
+      h('div', { class: 'ecard' }, h('label', null, 'Hintergrund', bg), h('label', null, 'Karten', cards), h('label', null, 'Grundton', tone),
+        sizeIn('width', 'Breite (px)'), sizeIn('height', 'Höhe (px)'), fontIn('num', 'Schrift für Zahlen'), fontIn('ui', 'Schrift für Text'),
+        h('div', { class: 'note', style: 'flex:1;min-width:200px', text: 'Die Größe sollte der Auflösung des Panel-Bildschirms entsprechen. Für andere Formate gibt es Vorlagen.' })),
       grid));
   }
+
+  // ---------------------------------------------------------------- Vorlagen, Import und Export
+  /** Ersetzt das Profil im Editor (rückgängig machbar). Gespeichert wird erst mit „Speichern“. */
+  function replaceDoc(doc) {
+    ed.past.push(ed.snap);
+    if (ed.past.length > 150) ed.past.shift();
+    ed.future = [];
+    ed.doc = normalize(doc);
+    ed.snap = JSON.stringify(ed.doc);
+    ed.page = 0;
+    ed.sel = null;
+    setDirty(ed.snap !== ed.saved);
+    storeDraft();
+    applyTheme();
+    renderAll();
+    scheduleRefs();
+  }
+  const sizeText = doc => `${(doc.canvas && doc.canvas.width) || 1920} × ${(doc.canvas && doc.canvas.height) || 1080}`;
+
+  async function openTemplates() {
+    let index;
+    try { index = await (await fetch('../Profiles/vorlagen/index.json', { cache: 'no-store' })).json(); }
+    catch { toast('Die Vorlagen ließen sich nicht laden.'); return; }
+    openModal('Vorlage laden', (body, foot, close) => {
+      body.append(h('p', { class: 'note', style: 'margin-bottom:14px', text: 'Vorlagen sind fertige PC-Seiten für verschiedene Bildschirmformate. Dein Look bleibt erhalten. Gespeichert wird erst mit „Speichern“, die bisherige Fassung kommt dann in die Sicherungen.' }));
+      const grid = h('div', { class: 'tpl-grid' });
+      for (const t of index) {
+        grid.append(h('button', { class: 'tpl', onclick: () => useTemplate(t, close) },
+          h('div', { class: 'tpl-img' }, h('img', { src: '../Profiles/vorlagen/' + t.image, alt: '' })),
+          h('div', { class: 'tpl-nm' }, t.name, h('span', { text: t.format })),
+          h('div', { class: 'tpl-tx', text: t.text })));
+      }
+      body.append(grid);
+      foot.append(h('button', { class: 'ghost', text: 'Abbrechen', onclick: close }));
+    }, null, 'auto');
+  }
+  async function useTemplate(t, closeList) {
+    let tpl;
+    try { tpl = await (await fetch('../Profiles/vorlagen/' + t.file, { cache: 'no-store' })).json(); }
+    catch { toast('Die Vorlage ließ sich nicht laden.'); return; }
+    const sameSize = sizeText(tpl) === sizeText(ed.doc);
+    const ids = new Set((tpl.pages || []).map(p => p.id));
+    const kept = sameSize ? ed.doc.pages.filter(p => !ids.has(p.id)) : [];
+    const lost = sameSize ? [] : ed.doc.pages.filter(p => !ids.has(p.id));
+    closeList();
+    openModal(`Vorlage „${t.name}“`, (body, foot, close) => {
+      body.append(h('p', { text: sameSize
+        ? `Die Vorlage ersetzt ${ids.size === 1 ? 'die PC-Seite' : 'die passenden Seiten'}.` + (kept.length ? ` Deine anderen Seiten (${kept.map(p => p.name || p.id).join(', ')}) bleiben.` : '')
+        : `Das Format ändert sich von ${sizeText(ed.doc)} auf ${sizeText(tpl)}.` }));
+      if (lost.length) body.append(h('p', { class: 'warnline', text: `Diese Seiten passen nicht ins neue Format und fallen weg: ${lost.map(p => p.name || p.id).join(', ')}. Mit Strg+Z oder „Abbrechen“ geht nichts verloren.` }));
+      foot.append(h('button', { class: 'ghost', text: 'Abbrechen', onclick: close }),
+        h('button', { class: 'primary', text: 'Vorlage übernehmen', onclick: () => {
+          const doc = clone(tpl);
+          doc.name = ed.doc.name || tpl.name;
+          doc.theme = clone(ed.doc.theme || {});
+          doc.formulas = Object.assign({}, ed.doc.formulas || {}, tpl.formulas || {});
+          doc.pages = [...(tpl.pages || []), ...kept];
+          if (Array.isArray(doc.autoPage)) doc.autoPage = doc.autoPage.filter(r => doc.pages.some(p => p.id === r.page));
+          delete doc.description;
+          close();
+          replaceDoc(doc);
+          toast(`Vorlage „${t.name}“ geladen. Speichern nicht vergessen.`);
+        } }));
+    }, null, 'small');
+  }
+
+  /** Entfernt Verweise auf Inhalte aus dem Internet (z. B. Bilder in CSS) und sammelt, was ein Profil schalten würde. */
+  function inspectImport(p) {
+    const report = { removed: 0, toggles: [], ha: new Set() };
+    const walk = node => {
+      if (Array.isArray(node)) { node.forEach(walk); return; }
+      if (!node || typeof node !== 'object') return;
+      for (const [k, v] of Object.entries(node)) {
+        if (typeof v === 'string') {
+          if (/url\s*\(|@import|expression\s*\(|javascript:/i.test(v)) { delete node[k]; report.removed++; continue; }
+          for (const m of v.matchAll(/ha:([a-z0-9_]+\.[a-z0-9_]+)/g)) report.ha.add(m[1]);
+          if (k === 'entity' && /^[a-z0-9_]+\.[a-z0-9_]+$/.test(v)) report.ha.add(v);
+        } else walk(v);
+      }
+      if (node.toggle === true && typeof node.entity === 'string') report.toggles.push(node);
+    };
+    walk(p);
+    return report;
+  }
+  function importProfile() {
+    if (Sx.isHost) { Sx.post({ type: 'importProfile' }); return; }
+    const input = h('input', { type: 'file', accept: '.json,application/json' });
+    input.addEventListener('change', async () => {
+      const f = input.files && input.files[0];
+      if (!f) return;
+      if (f.size > 2_000_000) { toast('Die Datei ist zu groß für ein Profil.'); return; }
+      importJson(await f.text(), f.name);
+    });
+    input.click();
+  }
+  function importJson(text, fileName) {
+    let p;
+    try { p = JSON.parse(text); } catch { toast('Das ist keine gültige JSON-Datei.'); return; }
+    if (!p || typeof p !== 'object' || (!Array.isArray(p.pages) && !Array.isArray(p.widgets))) { toast('In der Datei steckt kein Sensorium-Profil.'); return; }
+    const report = inspectImport(p);
+    const missing = ed.dirById ? [...report.ha].filter(id => !ed.dirById.has(id)) : [];
+    const pages = Array.isArray(p.pages) ? p.pages.map(x => x.name || x.id).join(', ') : 'eine Seite';
+    openModal('Profil importieren', (body, foot, close) => {
+      body.append(h('p', { text: `„${p.name || fileName}“ · ${sizeText(p)} · Seiten: ${pages}` }),
+        h('p', { class: 'note', text: 'Das Profil ersetzt den Inhalt des Editors. Gespeichert wird erst mit „Speichern“, deine bisherige Fassung kommt dann in die Sicherungen. Mit Strg+Z geht es zurück.' }));
+      if (sizeText(p) !== sizeText(ed.doc)) body.append(h('p', { class: 'warnline', text: `Das Profil ist für ${sizeText(p)} gebaut, dein jetziges für ${sizeText(ed.doc)}.` }));
+      if (report.removed) body.append(h('p', { class: 'warnline', text: `${report.removed} Verweis(e) auf Inhalte aus dem Internet wurden entfernt.` }));
+      if (missing.length) body.append(h('p', { class: 'warnline', text: `${missing.length} Home-Assistant-Wert(e) gibt es bei dir nicht. Sie bleiben leer, bis du sie im Editor neu zuordnest.` }));
+      let allow = null;
+      if (report.toggles.length) {
+        allow = h('input', { type: 'checkbox' });
+        body.append(h('div', { class: 'warnbox' },
+          h('p', { text: `Das Profil enthält ${report.toggles.length} Kachel(n), die Geräte schalten können: ${[...new Set(report.toggles.map(n => n.entity))].join(', ')}.` }),
+          h('label', { class: 'chk' }, allow, ' Schalten erlauben (sonst zeigen die Kacheln nur den Zustand)')));
+      }
+      foot.append(h('button', { class: 'ghost', text: 'Abbrechen', onclick: close }),
+        h('button', { class: 'primary', text: 'In den Editor laden', onclick: () => {
+          if (allow && !allow.checked) for (const n of report.toggles) delete n.toggle;
+          close();
+          replaceDoc(p);
+          toast('Importiert. Prüfe das Profil und klicke dann auf „Speichern“.');
+        } }));
+    }, null, 'small');
+  }
+  function exportProfile() {
+    const json = toJson(ed.doc) + '\n';
+    const base = String(ed.doc.name || 'profil').toLowerCase().replace(/[^a-z0-9äöüß]+/g, '-').replace(/^-+|-+$/g, '') || 'profil';
+    const name = `sensorium-${base}.json`;
+    const go = () => {
+      if (Sx.isHost) { Sx.post({ type: 'exportProfile', json, name }); return; }
+      const a = h('a', { href: URL.createObjectURL(new Blob([json], { type: 'application/json' })), download: name });
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+    };
+    // Vor dem Teilen warnen: Namen aus Home Assistant und Adressen von Steckdosen stehen im Profil.
+    if (!/ha:[a-z0-9_]+\.|tasmota:|"entity"\s*:/.test(json)) { go(); return; }
+    openModal('Profil exportieren', (body, foot, close) => {
+      body.append(h('p', { text: 'Das Profil enthält Namen aus deinem Home Assistant (z. B. Personen und Räume) und eventuell Adressen von Steckdosen.' }),
+        h('p', { class: 'note', text: 'Für dich selbst ist das kein Problem. Bevor du die Datei mit anderen teilst, sieh sie dir am besten kurz an. Zugangsdaten stehen nie darin.' }));
+      foot.append(h('button', { class: 'ghost', text: 'Abbrechen', onclick: close }), h('button', { class: 'primary', text: 'Exportieren', onclick: () => { close(); go(); } }));
+    }, null, 'small');
+  }
+  Sx.on('importedProfile', m => importJson(m.json || '', m.name || 'Datei'));
 
   // ---------------------------------------------------------------- Kopfzeile: Werkzeuge
   $('#ed-undo').innerHTML = svg('undo');

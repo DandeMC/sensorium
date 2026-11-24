@@ -2,6 +2,8 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
+<!-- Nur lokale Inhalte: Profile können keine Bilder, Schriften oder Daten aus dem Internet nachladen. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
 <title>Sensorium – Einrichtung</title>
 <link rel="stylesheet" href="css/panel.css">
 <link rel="stylesheet" href="css/setup.css">
@@ -25,6 +27,7 @@
 <script src="js/core.js"></script>
 <script src="js/widgets.js"></script>
 <script src="js/demo.js"></script>
+<script src="js/themes.js"></script>
 <script src="js/setup.js"></script>
 </body>
 </html>

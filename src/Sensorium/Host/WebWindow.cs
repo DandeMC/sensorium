@@ -68,7 +68,9 @@ internal abstract class WebWindow : Form
             if (!ReferenceEquals(web, _web))
                 return; // inzwischen ersetzt
             var core = web.CoreWebView2;
-            core.SetVirtualHostNameToFolderMapping("app.sensorium", AppPaths.WebDir, CoreWebView2HostResourceAccessKind.Allow);
+            // Der Programmordner ist die Wurzel: Seiten unter /Web, Vorlagen unter /Profiles/vorlagen
+            // (gleiche Struktur wie src/Sensorium, so laufen die Seiten auch im Browser mit Demo-Werten).
+            core.SetVirtualHostNameToFolderMapping("app.sensorium", AppPaths.AppDir, CoreWebView2HostResourceAccessKind.Allow);
 
             var settings = core.Settings;
             settings.AreDevToolsEnabled = Options.DevTools;
@@ -97,7 +99,7 @@ internal abstract class WebWindow : Form
             };
             core.ProcessFailed += OnProcessFailed;
 
-            web.Source = new Uri(Origin + PageUrl());
+            web.Source = new Uri(Origin + "Web/" + PageUrl());
         }
         catch (WebView2RuntimeNotFoundException ex)
         {

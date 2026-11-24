@@ -187,10 +187,37 @@ const Sx = (() => {
   }
 
   // ---------- Theme ----------
+  const DEFAULT_GRADIENTS = {
+    accent: ['#22c3ec', '#6d8cff'], warn: ['#ffd060', '#ff8a3d'], crit: ['#ff8a96', '#ff3d6e'],
+    ok: ['#5ff0b0', '#2bbf8a'], up: ['#b9a6ff', '#8a6cff'],
+  };
   function setTheme(theme) {
     st.theme = Object.assign({ colors: {}, gradients: {} }, theme || {});
     st.locale = st.theme.locale || 'de-DE';
     formats.clear();
+  }
+  /**
+   * Setzt ein Theme als CSS-Variablen und Seitenattribute (Hintergrund, Kartenstil, hell/dunkel).
+   * Werte eines vorherigen Themes werden vorher entfernt, damit beim Wechsel nichts übrig bleibt.
+   */
+  let themeVars = [];
+  function applyTheme(theme) {
+    const t = theme || {};
+    const root = document.documentElement.style;
+    for (const name of themeVars) root.removeProperty(name);
+    themeVars = [];
+    const set = (name, value) => { if (value == null || value === '') return; root.setProperty(name, String(value)); themeVars.push(name); };
+    for (const [name, value] of Object.entries(t.colors || {})) if (/^[a-z0-9-]+$/i.test(name)) set('--' + name, value);
+    if (t.fonts) { set('--num', t.fonts.num); set('--ui', t.fonts.ui); }
+    const gradients = Object.assign({}, DEFAULT_GRADIENTS, t.gradients || {});
+    for (const [name, g] of Object.entries(gradients)) if (Array.isArray(g) && g.length >= 2) { set(`--g-${name}-0`, g[0]); set(`--g-${name}-1`, g[1]); }
+    setTheme(Object.assign({}, t, { gradients }));
+    const body = document.body;
+    if (body) {
+      body.dataset.bg = t.background || 'aurora';
+      body.dataset.cards = t.cards || 'glass';
+      body.dataset.tone = t.tone === 'light' ? 'light' : 'dark';
+    }
   }
   /** Farbe für CSS: "@accent" wird zu var(--accent). */
   const color = (c, fallback) => !c ? fallback : c[0] === '@' ? `var(--${c.slice(1)})` : c;
@@ -243,5 +270,27 @@ const Sx = (() => {
   }
 
   const derive = fn => derivers.push(fn);
-  return { st, on, emit, post, derive, track, history, get, num, fmt, rate, size, dur, esc, tpl, de, toDate, clockOf, setTheme, color, colorValue, gradient, rule, cond, aliasTarget, isHost: !!webview };
+
+  /** JSON wie von Hand geschrieben: kurze Objekte in einer Zeile (für gespeicherte Profile). */
+  function toJson(v, ind = '') {
+    const inner = ind + '  ';
+    const flatArray = a => a.every(x => x === null || typeof x !== 'object');
+    if (Array.isArray(v)) {
+      if (!v.length) return '[]';
+      if (flatArray(v)) return '[' + v.map(x => JSON.stringify(x)).join(', ') + ']';
+      return '[\n' + v.map(x => inner + toJson(x, inner)).join(',\n') + '\n' + ind + ']';
+    }
+    if (v && typeof v === 'object') {
+      const keys = Object.keys(v).filter(k => v[k] !== undefined);
+      if (!keys.length) return '{}';
+      const flat = keys.every(k => v[k] === null || typeof v[k] !== 'object' || (Array.isArray(v[k]) && flatArray(v[k])));
+      if (flat) {
+        const line = '{ ' + keys.map(k => JSON.stringify(k) + ': ' + toJson(v[k], inner)).join(', ') + ' }';
+        if (line.length <= 180) return line;
+      }
+      return '{\n' + keys.map(k => inner + JSON.stringify(k) + ': ' + toJson(v[k], inner)).join(',\n') + '\n' + ind + '}';
+    }
+    return JSON.stringify(v);
+  }
+  return { st, on, emit, post, derive, toJson, track, history, get, num, fmt, rate, size, dur, esc, tpl, de, toDate, clockOf, setTheme, applyTheme, DEFAULT_GRADIENTS, color, colorValue, gradient, rule, cond, aliasTarget, isHost: !!webview };
 })();

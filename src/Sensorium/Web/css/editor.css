@@ -201,3 +201,28 @@ table.et td.val.dim { color: var(--e-dim); }
 #ed-toast { position: fixed; left: 50%; bottom: 330px; transform: translateX(-50%); z-index: 60; padding: 10px 18px; border-radius: 10px; background: #111a26; border: 1px solid var(--e-line2); box-shadow: 0 20px 50px -10px rgba(0,0,0,.8); }
 #ed-banner { position: fixed; left: 50%; top: 64px; transform: translateX(-50%); z-index: 55; padding: 10px 14px; border-radius: 10px; background: #1a1408; border: 1px solid rgba(255,180,70,.45); display: flex; align-items: center; gap: 12px; max-width: 80vw; }
 #ed-banner[hidden], #ed-toast[hidden] { display: none; }
+
+/* Looks (Theme-Vorlagen) und Layout-Vorlagen */
+.looks { display: flex; flex-wrap: wrap; gap: 10px; flex: 1; min-width: 0; }
+.look { width: 128px; padding: 6px; border-radius: 10px; border: 1px solid var(--e-line); background: rgba(255,255,255,.02); display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.look:hover { border-color: var(--e-line2); background: rgba(255,255,255,.05); }
+.look.on { border-color: rgba(56,210,239,.65); box-shadow: inset 0 0 0 1px rgba(56,210,239,.35); }
+.look-sw { height: 64px; }
+.look-nm { font-size: 12px; padding: 0 2px 1px; }
+.tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.tpl { padding: 10px; border-radius: 12px; border: 1px solid var(--e-line); background: rgba(255,255,255,.02); display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.tpl:hover { border-color: rgba(56,210,239,.5); background: rgba(56,210,239,.05); }
+.tpl-img { height: 160px; border-radius: 8px; background: #03060b; display: grid; place-items: center; overflow: hidden; }
+.tpl-img img { max-width: 100%; max-height: 100%; display: block; border-radius: 4px; }
+.tpl-nm { font-weight: 600; font-size: 14px; display: flex; align-items: baseline; gap: 8px; }
+.tpl-nm span { font-weight: 400; font-size: 12px; color: var(--e-muted); }
+.tpl-tx { font-size: 12px; color: var(--e-muted); line-height: 1.4; }
+
+/* Kleine Dialoge (Bestätigungen) */
+.dlg.small { width: min(620px, 92vw); height: auto; max-height: 86vh; }
+.dlg.small .dbody { padding: 16px; display: flex; flex-direction: column; gap: 10px; line-height: 1.5; }
+.dlg.small footer { justify-content: flex-end; }
+.warnline { color: var(--e-warn); font-size: 13px; }
+.warnbox { border: 1px solid rgba(255,180,70,.35); background: rgba(255,180,70,.06); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.chk { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.dlg.auto { height: auto; max-height: 86vh; }

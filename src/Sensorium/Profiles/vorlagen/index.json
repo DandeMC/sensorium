@@ -1,0 +1,6 @@
+[
+  { "file": "../standard.json", "image": "standard.png", "name": "Standard", "format": "1920 × 1080", "text": "Querformat, z. B. ein 24-Zoll-Monitor als Zweitbildschirm" },
+  { "file": "streifen-1920x480.json", "image": "streifen.png", "name": "Streifen", "format": "1920 × 480", "text": "Schmale Leiste, z. B. 8,8- oder 12,3-Zoll-Displays" },
+  { "file": "kompakt-1024x600.json", "image": "kompakt.png", "name": "Kompakt", "format": "1024 × 600", "text": "Kleines Display, z. B. 7 Zoll" },
+  { "file": "hochkant-1080x1920.json", "image": "hochkant.png", "name": "Hochkant", "format": "1080 × 1920", "text": "Monitor im Hochformat" }
+]

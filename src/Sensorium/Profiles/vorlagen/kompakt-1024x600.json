@@ -1,0 +1,318 @@
+{
+  "name": "Kompakt",
+  "description": "Kleines Display, z. B. 7 Zoll",
+  "version": 3,
+  "canvas": { "width": 1024, "height": 600 },
+  "theme": {
+    "locale": "de-DE",
+    "background": "aurora",
+    "colors": {
+      "bg": "#05090f",
+      "text": "#e9f1f8",
+      "muted": "#8596ab",
+      "dim": "#4f5d70",
+      "line": "rgba(140,190,255,.085)",
+      "track": "rgba(255,255,255,.065)",
+      "accent": "#38d2ef",
+      "accent2": "#6d8cff",
+      "up": "#a08cff",
+      "warn": "#ffb446",
+      "crit": "#ff5876",
+      "ok": "#4fe0a0"
+    },
+    "gradients": { "accent": ["#22c3ec", "#6d8cff"], "warn": ["#ffd060", "#ff8a3d"], "crit": ["#ff8a96", "#ff3d6e"], "ok": ["#5ff0b0", "#2bbf8a"], "up": ["#b9a6ff", "#8a6cff"] },
+    "fonts": { "num": "Bahnschrift, 'Segoe UI', sans-serif", "ui": "'Segoe UI Variable Text', 'Segoe UI', sans-serif" }
+  },
+  "formulas": {
+    "pc.wall.cost": { "label": "PC heute (Cent)", "expr": "pc.wall.today * strom.preis.ct" },
+    "pc.rest": { "label": "PC ohne CPU und GPU", "expr": "pos(pc.wall - cpu.power - gpu.power)" }
+  },
+  "switcher": { "y": 580 },
+  "autoPage": [
+    {
+      "when": { "sensor": "fps.current", "gt": 0 },
+      "page": "pc"
+    }
+  ],
+  "pages": [
+    {
+      "id": "pc",
+      "name": "PC-Übersicht",
+      "short": "PC",
+      "widgets": [
+        {
+          "type": "card",
+          "x": 16,
+          "y": 16,
+          "w": 300,
+          "h": 128,
+          "children": [
+            { "type": "clock", "x": 22, "y": 8, "w": 260, "h": 74, "show": "time", "size": 66 },
+            { "type": "clock", "x": 25, "y": 84, "w": 260, "h": 20, "show": "date", "size": 14 },
+            {
+              "type": "status",
+              "x": 24,
+              "y": 100,
+              "w": 260,
+              "h": 22,
+              "align": "left",
+              "checks": [
+                { "sensor": "cpu.temp", "warn": 70, "crit": 85, "label": "CPU-Temperatur" },
+                { "sensor": "gpu.temp", "warn": 75, "crit": 85, "label": "GPU-Temperatur" },
+                { "sensor": "gpu.hotspot", "warn": 90, "crit": 100, "label": "GPU-Hotspot" },
+                { "sensor": "cooler.liquid", "warn": 40, "crit": 45, "label": "Kühlmittel" },
+                { "sensor": "drive.C.temp", "warn": 60, "crit": 70, "label": "Laufwerk C:" }
+              ],
+              "activeIf": { "sensor": "fps.current", "gt": 0 },
+              "activeText": "Spielmodus",
+              "okText": "Alles normal"
+            }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 332,
+          "y": 16,
+          "w": 676,
+          "h": 128,
+          "children": [
+            {
+              "type": "group",
+              "x": 0,
+              "y": 0,
+              "w": 676,
+              "h": 128,
+              "visibleIf": { "sensor": "pc.wall", "exists": true },
+              "hiddenIf": { "sensor": "fps.current", "gt": 0 },
+              "children": [
+                { "type": "header", "x": 28, "y": 22, "w": 200, "h": 14, "text": "Leistung" },
+                { "type": "text", "x": 448, "y": 20, "w": 200, "h": 18, "text": "an der Steckdose", "align": "right" },
+                { "type": "value", "x": 28, "y": 46, "w": 240, "h": 68, "sensor": "pc.wall", "unit": "W", "size": 52, "unitSize": 20, "unitGap": 8 },
+                { "type": "spark", "x": 300, "y": 50, "w": 348, "h": 58, "sensor": "pc.wall", "color": "@accent", "grid": true, "fill": 0.24 }
+              ]
+            },
+            {
+              "type": "group",
+              "x": 0,
+              "y": 0,
+              "w": 676,
+              "h": 128,
+              "visibleIf": { "sensor": "pc.wall", "exists": false },
+              "hiddenIf": { "sensor": "fps.current", "gt": 0 },
+              "children": [
+                { "type": "header", "x": 28, "y": 22, "w": 200, "h": 14, "text": "Leistung" },
+                { "type": "text", "x": 448, "y": 20, "w": 200, "h": 18, "text": "CPU + GPU", "align": "right" },
+                { "type": "value", "x": 28, "y": 46, "w": 240, "h": 68, "sensor": "power.total", "unit": "W", "size": 52, "unitSize": 20, "unitGap": 8 },
+                { "type": "spark", "x": 300, "y": 50, "w": 348, "h": 58, "sensor": "power.total", "color": "@accent", "grid": true, "fill": 0.24 }
+              ]
+            },
+            {
+              "type": "group",
+              "x": 0,
+              "y": 0,
+              "w": 676,
+              "h": 128,
+              "visibleIf": { "sensor": "fps.current", "gt": 0 },
+              "children": [
+                { "type": "header", "x": 28, "y": 22, "w": 200, "h": 14, "text": "Framerate", "color": "@ok" },
+                { "type": "text", "x": 408, "y": 20, "w": 240, "h": 18, "text": "Ø {fps.current:0|avgpos} · {fps.frametime:1} ms", "emph": true, "align": "right" },
+                { "type": "value", "x": 28, "y": 46, "w": 240, "h": 68, "sensor": "fps.current", "unit": "FPS", "size": 52, "unitSize": 18, "unitGap": 8 },
+                { "type": "spark", "x": 300, "y": 50, "w": 348, "h": 58, "sensor": "fps.current", "color": "@ok", "grid": true, "fill": 0.24 }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 16,
+          "y": 160,
+          "w": 488,
+          "h": 300,
+          "label": "Prozessor",
+          "meta": "{cpu.name}",
+          "children": [
+            {
+              "type": "gauge",
+              "x": 4,
+              "y": 52,
+              "w": 214,
+              "h": 186,
+              "sensor": "cpu.temp",
+              "label": "Temperatur",
+              "unit": "°C",
+              "min": 20,
+              "max": 100,
+              "rules": [
+                { "from": 70, "color": "@warn" },
+                { "from": 85, "color": "@crit", "pulse": true }
+              ]
+            },
+            {
+              "type": "metric",
+              "x": 230,
+              "y": 54,
+              "w": 240,
+              "h": 62,
+              "label": "Auslastung",
+              "sensor": "cpu.load",
+              "unit": "%",
+              "max": 100,
+              "size": 28,
+              "unitSize": 15,
+              "sparkY": 34,
+              "sparkH": 22
+            },
+            {
+              "type": "metric",
+              "x": 230,
+              "y": 120,
+              "w": 240,
+              "h": 62,
+              "label": "Takt",
+              "sensor": "cpu.clock",
+              "unit": "GHz",
+              "max": 5.2,
+              "size": 28,
+              "unitSize": 15,
+              "sparkY": 34,
+              "sparkH": 22,
+              "scale": 0.001,
+              "decimals": 2
+            },
+            {
+              "type": "metric",
+              "x": 230,
+              "y": 186,
+              "w": 240,
+              "h": 62,
+              "label": "Leistung",
+              "sensor": "cpu.power",
+              "unit": "W",
+              "max": 200,
+              "size": 28,
+              "unitSize": 15,
+              "sparkY": 34,
+              "sparkH": 22,
+              "decimals": 1
+            },
+            { "type": "threads", "x": 22, "y": 262, "w": 448, "h": 26, "sensor": "cpu.threads", "warnAt": 85 }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 520,
+          "y": 160,
+          "w": 488,
+          "h": 300,
+          "label": "Grafikkarte",
+          "meta": "{gpu.name}",
+          "children": [
+            {
+              "type": "gauge",
+              "x": 4,
+              "y": 52,
+              "w": 214,
+              "h": 186,
+              "sensor": "gpu.temp",
+              "label": "Temperatur",
+              "unit": "°C",
+              "min": 20,
+              "max": 100,
+              "rules": [
+                { "from": 75, "color": "@warn" },
+                { "from": 85, "color": "@crit", "pulse": true }
+              ]
+            },
+            {
+              "type": "metric",
+              "x": 230,
+              "y": 54,
+              "w": 240,
+              "h": 62,
+              "label": "Auslastung",
+              "sensor": "gpu.load",
+              "unit": "%",
+              "max": 100,
+              "size": 28,
+              "unitSize": 15,
+              "sparkY": 34,
+              "sparkH": 22
+            },
+            {
+              "type": "metric",
+              "x": 230,
+              "y": 120,
+              "w": 240,
+              "h": 62,
+              "label": "Takt",
+              "sensor": "gpu.clock",
+              "unit": "MHz",
+              "max": 3000,
+              "size": 28,
+              "unitSize": 15,
+              "sparkY": 34,
+              "sparkH": 22
+            },
+            {
+              "type": "metric",
+              "x": 230,
+              "y": 186,
+              "w": 240,
+              "h": 62,
+              "label": "Leistung",
+              "sensor": "gpu.power",
+              "unit": "W",
+              "max": 300,
+              "size": 28,
+              "unitSize": 15,
+              "sparkY": 34,
+              "sparkH": 22,
+              "decimals": 1
+            },
+            { "type": "text", "x": 22, "y": 262, "w": 200, "h": 20, "text": "VRAM {gpu.vram.used:1} / {gpu.vram.total:0} GB", "emph": true, "size": 13 },
+            { "type": "bar", "x": 226, "y": 270, "w": 244, "h": 8, "sensor": "gpu.vram.used", "max": "gpu.vram.total" }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 16,
+          "y": 476,
+          "w": 320,
+          "h": 108,
+          "label": "Speicher",
+          "children": [
+            { "type": "text", "x": 92, "y": 22, "w": 200, "h": 18, "text": "RAM {sys.ram.used:1} / {sys.ram.total:0} GB", "emph": true, "size": 13, "align": "right" },
+            { "type": "bar", "x": 28, "y": 58, "w": 264, "h": 8, "sensor": "sys.ram.pct", "max": 100 },
+            { "type": "text", "x": 28, "y": 74, "w": 264, "h": 20, "text": "Laufwerk C: {sys.drive.C.pct:0} % belegt", "size": 13 }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 352,
+          "y": 476,
+          "w": 320,
+          "h": 108,
+          "label": "Netzwerk",
+          "children": [
+            { "type": "value", "x": 28, "y": 50, "w": 130, "h": 36, "sensor": "sys.net.down", "format": "rate", "size": 26, "unitSize": 13, "color": "@text" },
+            { "type": "value", "x": 168, "y": 50, "w": 130, "h": 36, "sensor": "sys.net.up", "format": "rate", "size": 26, "unitSize": 13 },
+            { "type": "label", "x": 28, "y": 88, "w": 120, "h": 14, "text": "Download", "icon": "down", "color": "@accent" },
+            { "type": "label", "x": 168, "y": 88, "w": 120, "h": 14, "text": "Upload", "icon": "up", "color": "@up" }
+          ]
+        },
+        {
+          "type": "card",
+          "x": 688,
+          "y": 476,
+          "w": 320,
+          "h": 108,
+          "label": "Laufzeit",
+          "children": [
+            { "type": "text", "x": 28, "y": 46, "w": 264, "h": 40, "text": "{sys.uptime|dur}", "size": 30, "font": "num", "weight": 300, "color": "@text" },
+            { "type": "text", "x": 28, "y": 80, "w": 264, "h": 20, "text": "{sys.board}", "size": 13 }
+          ]
+        }
+      ]
+    }
+  ]
+}
